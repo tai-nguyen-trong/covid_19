@@ -7,5 +7,5 @@
 
 ## ----- Thông tin nhóm -----------------------
 ### 1. Họ & Tên: Nguyễn Trọng Tài - MSSV: 24810039 - SĐT: 0976062714 – Email: tai.nguyen7922@gmail.com
-### 2. Họ & Tên: Lê Anh Dũng - MSSV: 24810029 - SĐT: 0372769728 - Email: thachdateduy@gmail.com
-### 3. Họ & Tên: Thạch Dáte Duy - MSSV: 
+### 2. Họ & Tên: Lê Anh Dũng - MSSV: 
+### 3. Họ & Tên: Thạch Dáte Duy - MSSV: 24810029 - SĐT: 0372769728 - Email: thachdateduy@gmail.com
