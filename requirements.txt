@@ -1,0 +1,47 @@
+1. Tìm hiểu dữ liệu
+
+Chọn dataset từ các nguồn: UC Irvine, Kaggle, Amazon AWS, Data Portals, OpenDataMonitor, Quandl, Wikipedia, Quora, Reddit
+Mô tả chi tiết dataset: lịch sử, nguồn gốc, công dụng, đặc trưng, kiểu dữ liệu, mục đích, lĩnh vực, hạn chế, khiếm khuyết
+
+2. Xử lý dữ liệu
+Yêu cầu kỹ thuật:
+
+Tổ chức chương trình theo modules/packages
+Thực hiện CRUD (Create, Read, Update, Delete)
+Làm sạch dữ liệu (sửa lỗi, loại bỏ trùng lặp, gán nhãn sai)
+Chuẩn hóa dữ liệu thống nhất
+Sử dụng NumPy, Pandas cho xử lý dữ liệu
+Trực quan hóa dữ liệu bằng Matplotlib
+Vẽ các loại biểu đồ biểu diễn dữ liệu
+Áp dụng kiến thức về kiểu dữ liệu phức, hàm, xử lý file, xử lý chuỗi
+Xây dựng giao diện (tùy chọn)
+
+3. Báo cáo và thuyết trình
+
+Báo cáo đồ án theo mẫu
+Slides thuyết trình 10-15 slides
+Bảng phân công công việc chi tiết
+
+Lịch trình và đánh giá
+Tiến độ:
+
+Báo cáo: tuần 14-15
+Nộp báo cáo: tuần 16
+
+Đánh giá:
+
+Thuyết trình trước lớp (không bắt buộc, có điểm cộng)
+Vấn đáp cá nhân từng thành viên (bắt buộc)
+
+Cấu trúc nộp bài
+Thư mục: <Mã lớp>_<STT nhóm>_<Tên đề tài>
+Bao gồm:
+
+source-code/: mã nguồn chương trình
+reports/: báo cáo, slides, bảng chấm, phân công
+dataset/: dữ liệu sử dụng
+refs/: tài liệu tham khảo
+libs/: thư viện liên quan
+readme.txt: thông tin đề tài và nhóm
+
+Nén định dạng .zip để nộp.
