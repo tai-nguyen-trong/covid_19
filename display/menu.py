@@ -6,6 +6,7 @@ import pandas as pd
 from tkinter import messagebox # Cần để hiển thị cảnh báo trực tiếp từ menu.py
 
 from modules import app_logic # Chỉ import app_logic
+from display.form_dialog import show_form_window
 
 # Biến toàn cục cho ứng dụng (QUẢN LÝ DỮ LIỆU TẠI ĐÂY)
 df = None # df hiện tại đang hiển thị trên bảng chính (có thể là original hoặc đã lọc trước đó)
@@ -50,6 +51,50 @@ def handle_open_file():
 
         current_page = 1 # Về trang đầu sau khi tải
         app_logic.update_table_display(table, page_label, df, current_page, items_per_page)
+
+def handle_add_data():
+    def on_submit(new_data):
+        global df, df_original
+        # Tạo DataFrame từ dữ liệu mới
+        new_row = pd.DataFrame([new_data])
+        df = pd.concat([df, new_row], ignore_index=True)
+        df_original = df.copy()  # Cập nhật gốc luôn
+
+        # Cập nhật bảng
+        app_logic.update_table_display(table, page_label, df, current_page, items_per_page)
+
+    show_form_window(root, data=None, on_submit=on_submit)
+
+def handle_edit_data():
+    global df, df_original
+
+    selected_item = table.focus()
+    if not selected_item:
+        messagebox.showwarning("Chọn dòng", "Vui lòng chọn dòng để sửa.")
+        return
+
+    selected_values = table.item(selected_item)["values"]
+    column_names = table["columns"]
+    data_dict = dict(zip(column_names, selected_values))
+
+    def on_submit(edited_data):
+        nonlocal selected_values
+        # Tìm chỉ số dòng trong df khớp với dòng được chọn
+        row_index = None
+        for idx in df.index:
+            if all(str(df.loc[idx, col]) == str(val) for col, val in zip(column_names, selected_values)):
+                row_index = idx
+                break
+
+        if row_index is not None:
+            for col in column_names:
+                df.at[row_index, col] = edited_data[col]
+
+            df_original = df.copy()  # Cập nhật dữ liệu gốc
+            app_logic.update_table_display(table, page_label, df, current_page, items_per_page)
+
+    show_form_window(root, data=data_dict, on_submit=on_submit)
+
 
 file_menu.add_command(label="Open File", command=handle_open_file)
 file_menu.add_command(label="Exit", command=root.quit)
@@ -118,6 +163,16 @@ def handle_filter_click():
 
 filter_button = tk.Button(root, text="Lọc dữ liệu", command=handle_filter_click)
 filter_button.grid(row=3, column=0, columnspan=5, padx=10, pady=10)
+
+
+
+add_button = tk.Button(root, text="Thêm dữ liệu", command=handle_add_data)
+add_button.grid(row=3, column=1, padx=10, pady=5, sticky="w")
+
+edit_button = tk.Button(root, text="Sửa dòng đã chọn", command=handle_edit_data)
+edit_button.grid(row=3, column=2, padx=10, pady=5, sticky="w")
+
+
 
 # --- KHỞI TẠO LOGIC ỨNG DỤNG ---
 # app_logic không còn cần các biến toàn cục nữa.
