@@ -5,7 +5,39 @@ import math # Cần import math để sử dụng math.ceil
 
 def read_data(file_path):
     """Đọc dữ liệu từ file CSV và trả về DataFrame."""
-    return pd.read_csv(file_path)
+    try:
+        return pd.read_csv(file_path)
+    except FileNotFoundError:
+        print(f"Error: File not found at {file_path}")
+        return None
+    except Exception as e:
+        print(f"Error reading CSV: {e}") 
+        return None
+    
+def add_record(df, new_record: dict):
+    return df.append(new_record, ignore_index=True)
+
+def update_record(df, index: int, updated_record: dict):
+    if 0 <= index < len(df):
+        for key, value in updated_record.items():
+            df.at[index, key] = value
+    return df
+
+def delete_record(df, index):
+    if 0 <= index < len(df):
+        df.drop(index, inplace=True)
+        df.reset_index(drop=True, inplace=True)
+    return df
+
+def search_record(df, query):
+    query = query.lower()
+    mask = df.apply(lambda row: row.astype(str).str.lower().str.contains(query).any(), axis=1)
+    return df[mask]
+
+def sort_record(df, column, ascending=True):
+    if column in df.columns:
+        return df.sort_values(by=column, ascending=ascending).reset_index(drop=True)
+    return df
 
 def paginate_data(df, page_number, items_per_page):
     """Phân trang dữ liệu."""
@@ -23,24 +55,3 @@ def get_total_pages(df, items_per_page):
     total_items = len(df)
     return math.ceil(total_items / items_per_page)
 
-def filter_data(df, column, min_value, max_value):
-    """Lọc dữ liệu theo khoảng giá trị cho một cột cụ thể."""
-    if df is None or df.empty:
-        return pd.DataFrame()
-
-    if column not in df.columns:
-        # Nếu cột không tồn tại, bạn có thể muốn xử lý lỗi hoặc trả về df rỗng
-        raise ValueError(f"Cột '{column}' không tồn tại trong dữ liệu.")
-    
-    # Tạo một bản sao để tránh cảnh báo SettingWithCopyWarning
-    df_copy = df.copy()
-
-    # Đảm bảo cột là kiểu số để lọc, chuyển đổi lỗi thành NaN
-    df_copy[column] = pd.to_numeric(df_copy[column], errors='coerce')
-    
-    # Loại bỏ các hàng có giá trị NaN trong cột đang lọc
-    filtered_df = df_copy.dropna(subset=[column])
-
-    # Lọc dữ liệu
-    filtered_df = filtered_df[(filtered_df[column] >= min_value) & (filtered_df[column] <= max_value)]
-    return filtered_df
