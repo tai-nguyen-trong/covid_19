@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import messagebox, filedialog, ttk
 import os
 
+# from display.menu import sort_column
 from modules import crud
 from modules import filters # Import module filters đã tách
 
@@ -65,6 +66,7 @@ def update_table_display(target_table, target_page_label, df_to_display, current
         target_table["columns"] = list(df_to_display.columns)
         for col_name in df_to_display.columns:
             target_table.heading(col_name, text=col_name)
+            # target_table.heading(col_name, text=col_name + " ▲↓", command=lambda _col=col_name: sort_column(_col))
             target_table.column(col_name, width=120, anchor="center", stretch=tk.YES)
         target_table.column("#0", width=0, stretch=tk.NO) # Ẩn cột ID mặc định
     
@@ -73,12 +75,16 @@ def update_table_display(target_table, target_page_label, df_to_display, current
         target_table["columns"] = list(df_to_display.columns)
         for col_name in df_to_display.columns:
             target_table.heading(col_name, text=col_name)
+            # target_table.heading(col_name, text=col_name + " ▲↓", command=lambda _col=col_name: sort_column(_col))
             target_table.column(col_name, width=120, anchor="center", stretch=tk.YES)
         target_table.column("#0", width=0, stretch=tk.NO)
 
 
     for _, row in page_data.iterrows():
         target_table.insert("", "end", values=list(row))
+
+    # Thêm dòng này để cập nhật scrollbar
+    target_table.update_idletasks()
 
     total_pages = crud.get_total_pages(df_to_display, items_per_pg)
     target_page_label.config(text=f"Trang {current_page_num}/{total_pages}")
