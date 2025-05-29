@@ -57,6 +57,7 @@ def get_total_pages(df, items_per_page):
     total_items = len(df)
     return math.ceil(total_items / items_per_page)
 
+# cập nhật bảng dữ liệu (Treeview) trên giao diện bằng cách xóa dữ liệu cũ và hiển thị dữ liệu theo trang hiện tại.
 def update_table_display(target_table, target_page_label, df_to_display, current_page_num, items_per_pg):
     """
     Hàm cập nhật một bảng dữ liệu (Treeview) trên giao diện.
@@ -82,6 +83,7 @@ def update_table_display(target_table, target_page_label, df_to_display, current
 
     # Cập nhật dữ liệu vào bảng
     for _, row in page_data.iterrows():
+
         target_table.insert("", "end", values=list(row))
 
     target_page_label.config(text=f"Trang {current_page_num}/{total_pages}")

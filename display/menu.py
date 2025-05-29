@@ -5,16 +5,18 @@ from tkinter import filedialog
 import pandas as pd
 import matplotlib.pyplot as plt
 from tkinter import messagebox 
-from modules import app_logic 
-from display.form_dialog import show_form_window
+from display.formInfo import show_form_window
 from modules import crud
-from modules.crud import read_data
+from modules.crud import get_total_pages, read_data
+from modules.filters import show_filter_window
+from modules.navigation import handle_page_navigation
 
 # Biến toàn cục cho ứng dụng (QUẢN LÝ DỮ LIỆU TẠI ĐÂY)
 df = None # df hiện tại đang hiển thị trên bảng chính (có thể là original hoặc đã lọc trước đó)
 df_original = None # Luôn là dữ liệu gốc sau khi tải file
+df_current = None
 current_page = 1
-items_per_page = 20
+items_per_page = 30
 ascending_order = {}  # Dictionary để lưu trạng thái sắp xếp từng cột
 
 
@@ -25,7 +27,8 @@ filtered_df = pd.DataFrame()  # DataFrame đã lọc
 
 def load_csv_file():
     """Hàm đọc file CSV và hiển thị lên Treeview"""
-    global current_df, filtered_df, df, df_original, current_page
+    # global current_df, filtered_df, df, df_original, current_page
+    global df_original, df_current, current_page
 
     # Mở dialog chọn file
     file_path = filedialog.askopenfilename(
@@ -41,10 +44,14 @@ def load_csv_file():
                 messagebox.showerror("Lỗi", "Không thể đọc file CSV hoặc file không có dữ liệu!")
                 return
 
-            # Lưu dữ liệu gốc
-            df_original = df.copy()
-            current_df = df
-            filtered_df = df.copy()
+            # # Lưu dữ liệu gốc
+            # df_original = df.copy()
+            # current_df = df
+            # filtered_df = df.copy()
+            df_original = pd.read_csv(file_path)  # Đọc file CSV
+            df_current = df_original.copy()  # Cập nhật dữ liệu hiện tại để điều hướng đúng
+            current_page = 1  # Reset về trang đầu tiên
+
 
             # Xóa dữ liệu cũ trong Treeview
             for item in tree.get_children():
@@ -79,13 +86,19 @@ def load_csv_file():
 
             messagebox.showinfo("Thành công", f"Đã tải {len(df)} bản ghi từ file {file_path}")
 
-            current_page = 1
-            crud.update_table_display(tree, page_label, df, current_page, items_per_page)
+            # current_page = 1
+            # crud.update_table_display(tree, page_label, df, current_page, items_per_page)
+            total_pages = get_total_pages(df_current, items_per_page)  # Tính số trang
+
+            crud.update_table_display(tree, page_label, df_current, current_page, items_per_page)  
+            page_label.config(text=f"Trang {current_page}/{total_pages}")  # Hiển thị số trang đúng
+        
 
             # Hiển thị phần khung chức năng và nút chức năng
             pagination_frame.pack(pady=5)
             button_frame.pack(pady=10)
-            search_frame.pack(pady=10)
+            # search_frame.pack(pady=10)
+            search_frame.grid(row=0, column=1, padx=20, sticky="e")
 
             for j, btnChuyenHuong in enumerate(function_buttons2):
                 btnChuyenHuong.grid(row=0, column=j, padx=3) 
@@ -226,24 +239,48 @@ def setup_treeview():
 
 
 
-
 def handle_search_data(keyword):
-    global df_original
+    global df_original, df_current, current_page  # Thêm biến lưu trạng thái dữ liệu hiện tại
+
     if not keyword:
         return
     keyword = keyword.lower()
-    
-    # Cải thiện hiệu suất tìm kiếm
+
+    # Lọc dữ liệu
     df_filtered = df_original[df_original.astype(str).apply(lambda x: x.str.contains(keyword, case=False, na=False)).any(axis=1)]
 
-    # Hiển thị kết quả nhưng không ghi đè lên df
-    crud.update_table_display(tree, page_label, df_filtered, 1, items_per_page)
+    if df_filtered.empty:
+        messagebox.showinfo("Thông báo", "Không tìm thấy kết quả phù hợp!")
+        return
 
-    search_btn.config(command=lambda: handle_search_data(search_entry.get()))
+    df_current = df_filtered  # Cập nhật dữ liệu hiện tại để phân trang đúng
+    current_page = 1  # Đặt trang đầu tiên khi tìm kiếm mới
+    total_pages_filtered = get_total_pages(df_current, items_per_page)
+
+
+
+    # Hiển thị kết quả với số trang mới
+    crud.update_table_display(tree, page_label, df_current, current_page, items_per_page)
+
+    page_label.config(text=f"Trang {current_page}/{total_pages_filtered}")
+# def handle_search_data(keyword):
+#     global df_original
+#     if not keyword:
+#         return
+#     keyword = keyword.lower()
+    
+#     # Cải thiện hiệu suất tìm kiếm
+#     df_filtered = df_original[df_original.astype(str).apply(lambda x: x.str.contains(keyword, case=False, na=False)).any(axis=1)]
+
+#     # Hiển thị kết quả nhưng không ghi đè lên df
+#     crud.update_table_display(tree, page_label, df_filtered, 1, items_per_page, keyword)
+
+#     search_btn.config(command=lambda: handle_search_data(search_entry.get()))
 
 def reset_search():
     global df
     df = df_original.copy()
+    search_entry.delete(0, tk.END)  # Xóa nội dung trong ô nhập tìm kiếm
     crud.update_table_display(tree, page_label, df, 1, items_per_page)
 
 #========================= CHART FUNCTIONS =========================
@@ -308,17 +345,33 @@ def open_chart_window():
     tk.Button(chart_window, text="Tỷ lệ hồi phục", command=lambda: draw_chart5(df)).pack(pady=5)
 
 
-# Hàm xử lý điều hướng trang (gọi app_logic.handle_page_navigation)
-def navigate_page(action_type):
-    global current_page
-    if df is None: return # Không làm gì nếu chưa có dữ liệu
+# # Hàm xử lý điều hướng trang
+# def navigate_page(action_type):
+#     global current_page
+#     if df is None: return # Không làm gì nếu chưa có dữ liệu
 
-    # app_logic.handle_page_navigation sẽ trả về số trang mới
-    new_page = app_logic.handle_page_navigation(df, current_page, items_per_page, action_type)
+#     # app_logic.handle_page_navigation sẽ trả về số trang mới
+#     new_page = handle_page_navigation(df, current_page, items_per_page, action_type)
     
-    if new_page != current_page: # Chỉ cập nhật và hiển thị nếu trang thay đổi
+#     if new_page != current_page: # Chỉ cập nhật và hiển thị nếu trang thay đổi
+#         current_page = new_page
+#         crud.update_table_display(tree, page_label, df, current_page, items_per_page)
+def navigate_page(action_type):
+    global current_page, df_current  # Đảm bảo đang dùng dữ liệu hiện tại, không quay về df gốc
+
+    if df_current is None or df_current.empty: 
+        return  # Không làm gì nếu chưa có dữ liệu
+
+    # Gọi điều hướng trên dữ liệu hiện tại
+    new_page = handle_page_navigation(df_current, current_page, items_per_page, action_type)  
+    
+    if new_page != current_page:  # Chỉ cập nhật nếu trang thay đổi
         current_page = new_page
-        crud.update_table_display(tree, page_label, df, current_page, items_per_page)
+        crud.update_table_display(tree, page_label, df_current, current_page, items_per_page)
+        
+        
+        total_pages_filtered = get_total_pages(df_current, items_per_page)
+        page_label.config(text=f"Trang {current_page}/{total_pages_filtered}")  
 
 # Nút lọc dữ liệu
 def handle_filter_click():
@@ -326,13 +379,16 @@ def handle_filter_click():
         messagebox.showwarning("Warning", "Chưa tải dữ liệu để lọc!")
         return
     # Truyền root và df_original vào hàm lọc để app_logic có thể dùng
-    app_logic.show_filter_window(root, df_original)
+    show_filter_window(root, df_original)
 
 # ======================= GUI SETUP =======================
 # Khởi tạo cửa sổ chính
 root = tk.Tk()
 root.title("COVID-19 Data Analysis")
 root.geometry("1000x700")
+# Mở rộng cửa sổ nhưng vẫn giữ thanh tiêu đề và nút điều khiển
+root.state("zoomed")  # Sử dụng `zoomed` thay vì `fullscreen`
+
 # root.resizable(False, False)
 
 # ======================= LOAD FILE BUTTON =======================
@@ -341,7 +397,23 @@ file_frame.pack(fill="x", anchor="w", pady=10)
 
 btn_load_file = tk.Button(file_frame, text="Tải File CSV", command=load_csv_file,
                           bg="lightgreen", width=15, font=("Arial", 10))
-btn_load_file.pack(side="left", padx=5)
+# btn_load_file.pack(side="left", padx=5)
+btn_load_file.grid(row=0, column=0, padx=5, sticky="w")
+
+# ======================= SEARCH BUTTON =======================
+# search_frame = tk.Frame(root)
+# search_frame.pack(pady=10)
+search_frame = tk.Frame(file_frame)  # Đặt search_frame vào file_frame để nằm chung hàng
+search_frame.grid(row=0, column=1, padx=100, sticky="e")  # Đặt bên phải nút tải file
+
+
+tk.Label(search_frame, text="Search:").grid(row=0, column=0, padx=5)
+search_entry = tk.Entry(search_frame)
+search_entry.grid(row=0, column=1, padx=5)
+search_btn = tk.Button(search_frame, text="Search", width=10)
+search_btn.grid(row=0, column=2, padx=5)
+# Liên kết sự kiện nhấn nút với hàm tìm kiếm
+search_btn.config(command=lambda: handle_search_data(search_entry.get()))
 
 # ======================= TREEVIEW + SCROLLBAR =======================
 table_frame = tk.Frame(root)
@@ -383,30 +455,32 @@ button_frame.pack(pady=10)
 btn_create = tk.Button(button_frame, text="Create", bg="orange", width=10, command=handle_add_data)
 btn_update = tk.Button(button_frame, text="Update", bg="lightblue", width=10, command=handle_update_data)
 btn_delete = tk.Button(button_frame, text="Delete", bg="red", fg="white", width=10, command=handle_delete_data)
+btn_reset = tk.Button(button_frame, text="Reset", bg="lightgray", width=10, command=reset_search)
 btn_chart = tk.Button(button_frame, text="Charts", bg="purple", fg="white", width=10, command=open_chart_window)
 btn_export = tk.Button(button_frame, text="Export", bg="green", fg="white", width=10)
 
 # btn_create.grid(row=0, column=0, padx=5)
 # btn_update.grid(row=0, column=1, padx=5)
 # btn_delete.grid(row=0, column=2, padx=5)
-# btn_chart.grid(row=0, column=3, padx=5)
-# btn_export.grid(row=0, column=4, padx=5)
+# btn_reset.grid(row=0, column=3, padx=5)
+# btn_chart.grid(row=0, column=4, padx=5)
+# btn_export.grid(row=0, column=5, padx=5)
 
-# ======================= SEARCH BUTTON =======================
-search_frame = tk.Frame(root)
-search_frame.pack(pady=10)
+# # ======================= SEARCH BUTTON =======================
+# search_frame = tk.Frame(root)
+# search_frame.pack(pady=10)
 
-tk.Label(search_frame, text="Search:").grid(row=0, column=0, padx=5)
-search_entry = tk.Entry(search_frame)
-search_entry.grid(row=0, column=1, padx=5)
-search_btn = tk.Button(search_frame, text="Search", width=10)
-search_btn.grid(row=0, column=2, padx=5)
-# Liên kết sự kiện nhấn nút với hàm tìm kiếm
-search_btn.config(command=lambda: handle_search_data(search_entry.get()))
+# tk.Label(search_frame, text="Search:").grid(row=0, column=0, padx=5)
+# search_entry = tk.Entry(search_frame)
+# search_entry.grid(row=0, column=1, padx=5)
+# search_btn = tk.Button(search_frame, text="Search", width=10)
+# search_btn.grid(row=0, column=2, padx=5)
+# # Liên kết sự kiện nhấn nút với hàm tìm kiếm
+# search_btn.config(command=lambda: handle_search_data(search_entry.get()))
 
 
 # Ẩn tất cả các nút khi chương trình khởi động
-function_buttons = [btn_create, btn_update, btn_delete, btn_chart, btn_export]
+function_buttons = [btn_create, btn_update, btn_delete, btn_reset, btn_chart, btn_export]
 function_buttons2 = [btn_first, btn_prev, btn_next, btn_last, page_label]
 for btn in function_buttons:
     btn.grid_remove()
@@ -416,7 +490,8 @@ for btnChuyenHuong in function_buttons2:
 
 pagination_frame.pack_forget()
 button_frame.pack_forget()
-search_frame.pack_forget()
+# search_frame.pack_forget()
+search_frame.grid_remove()  # Ẩn search_frame
 
 
 
