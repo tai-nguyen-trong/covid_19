@@ -9,7 +9,7 @@ from modules import app_logic
 from display.form_dialog import show_form_window
 from modules import crud
 from modules.crud import read_data
-from display.chart import open_chart_window
+from modules.chart import open_chart_window
 
 # Biến toàn cục cho ứng dụng (QUẢN LÝ DỮ LIỆU TẠI ĐÂY)
 df = None # df hiện tại đang hiển thị trên bảng chính (có thể là original hoặc đã lọc trước đó)
@@ -97,7 +97,7 @@ def handle_add_data():
     def on_submit(new_data):
         global df, df_original
 
-        # # 🔁 Đọc lại dữ liệu từ file để đảm bảo không bị mất dữ liệu cũ
+        # #  Đọc lại dữ liệu từ file để đảm bảo không bị mất dữ liệu cũ
         # df = read_data("dataset/country_wise_latest.csv")
         # if df is None:
         #     df = pd.DataFrame()  # Nếu file chưa tồn tại
@@ -328,7 +328,7 @@ button_frame.pack(pady=10)
 btn_create = tk.Button(button_frame, text="Create", bg="orange", width=10, command=handle_add_data)
 btn_update = tk.Button(button_frame, text="Update", bg="lightblue", width=10, command=handle_update_data)
 btn_delete = tk.Button(button_frame, text="Delete", bg="red", fg="white", width=10, command=handle_delete_data)
-btn_chart = tk.Button(button_frame, text="Charts", bg="purple", fg="white", width=10, command=open_chart_window)
+btn_chart = tk.Button(button_frame, text="Charts", bg="purple", fg="white", width=10, command= lambda :open_chart_window(root, df))
 btn_export = tk.Button(button_frame, text="Export", bg="green", fg="white", width=10, command=export_data)
 
 # btn_create.grid(row=0, column=0, padx=5)
