@@ -93,9 +93,9 @@ def show_form_window(root, data=None, on_submit=None):
     # ==================== NÚT LƯU DỮ LIỆU ====================
     def submit_action():
         result = {field: entry.get() for field, entry in entries.items()}
+        form.destroy()  # Đảm bảo form đóng ngay lập tức sau khi lưu
         if on_submit:
             on_submit(result)
-        form.destroy()
 
     submit_btn = tk.Button(form, text="💾 Lưu", bg="lightblue", font=("Arial", 11, "bold"), width=15, command=submit_action)
     submit_btn.pack(pady=15)

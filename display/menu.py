@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from tkinter import messagebox 
 from display.formInfo import show_form_window
@@ -111,23 +112,41 @@ def load_csv_file():
 
 def handle_add_data():
     def on_submit(new_data):
-        global df, df_original
+        # global df, df_original
+        global df, df_original, df_current, current_page 
 
-        # # 🔁 Đọc lại dữ liệu từ file để đảm bảo không bị mất dữ liệu cũ
-        # df = read_data("dataset/country_wise_latest.csv")
-        # if df is None:
-        #     df = pd.DataFrame()  # Nếu file chưa tồn tại
+        # 🔁 Đọc lại dữ liệu từ file để đảm bảo không bị mất dữ liệu cũ
+        try:
+            df_existing = pd.read_csv("dataset/country_wise_latest.csv")  
+        except FileNotFoundError:
+            df_existing = pd.DataFrame()  # Nếu file chưa tồn tại, tạo DataFrame rỗng
 
-        # ➕ Thêm dòng mới
+        # 🔁 Chuyển các trường rỗng thành NaN ngay lúc thêm dữ liệu
+        new_data = {key: (val if val.strip() != "" else np.nan) for key, val in new_data.items()}
+
+
+
+        # ➕ Thêm dòng mới vào dữ liệu hiện tại
         new_row = pd.DataFrame([new_data])
-        df = pd.concat([df, new_row], ignore_index=True)
+        df = pd.concat([df_existing, new_row], ignore_index=True)  # Giữ lại dữ liệu cũ và thêm mới
         df_original = df.copy()
+        df_current = df.copy() 
 
         # Ghi lại vào file CSV
         df.to_csv("dataset/country_wise_latest.csv", index=False)
 
+        # Cập nhật số trang sau khi thêm dữ liệu
+        total_pages = get_total_pages(df_current, items_per_page)
+        # current_page = 1  # Đặt về trang đầu tiên sau khi thêm dữ liệu
+        current_page = total_pages  # Đặt về trang cuối sau khi thêm dữ liệu
+
+
+
         # Cập nhật bảng
-        crud.update_table_display(tree, page_label, df, current_page, items_per_page)
+        crud.update_table_display(tree, page_label, df_current, current_page, items_per_page)
+        page_label.config(text=f"Trang {current_page}/{total_pages}")  # Hiển thị số trang đúng
+
+        # crud.update_table_display(tree, page_label, df, current_page, items_per_page)
         messagebox.showinfo("Thành công", "Dữ liệu đã được thêm thành công.")
 
     show_form_window(root, data=None, on_submit=on_submit)
@@ -279,11 +298,23 @@ def handle_search_data(keyword):
 
 #     search_btn.config(command=lambda: handle_search_data(search_entry.get()))
 
+# def reset_search():
+#     global df
+#     df = df_original.copy()
+#     search_entry.delete(0, tk.END)  # Xóa nội dung trong ô nhập tìm kiếm
+#     crud.update_table_display(tree, page_label, df, 1, items_per_page)
 def reset_search():
-    global df
+    global df, df_current, current_page  # Đảm bảo cập nhật biến đúng
+
     df = df_original.copy()
+    df_current = df_original.copy()  # Cập nhật dữ liệu hiện tại để phân trang chính xác
+    current_page = 1  # Reset về trang đầu tiên
+
     search_entry.delete(0, tk.END)  # Xóa nội dung trong ô nhập tìm kiếm
-    crud.update_table_display(tree, page_label, df, 1, items_per_page)
+    total_pages = get_total_pages(df_current, items_per_page)  # Tính số trang theo dataset gốc
+
+    crud.update_table_display(tree, page_label, df_current, current_page, items_per_page)
+    page_label.config(text=f"Trang {current_page}/{total_pages}")  # Hiển thị số trang đúng
 
 #========================= CHART FUNCTIONS =========================
 def draw_chart1(df):

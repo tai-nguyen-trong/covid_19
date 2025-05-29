@@ -37,11 +37,25 @@ def handle_page_navigation(df_current, current_page_num, items_per_pg, action_ty
 
     total_pages = crud.get_total_pages(df_current, items_per_pg)  # Lấy số trang từ dữ liệu hiện tại
 
-    # Điều hướng trang
-    if action_type == "next" and current_page_num < total_pages:
-        current_page_num += 1
-    elif action_type == "prev" and current_page_num > 1:
-        current_page_num -= 1
+    # # Điều hướng trang
+    # if action_type == "next" and current_page_num < total_pages:
+    #     current_page_num += 1
+    # elif action_type == "prev" and current_page_num > 1:
+    #     current_page_num -= 1
+    # elif action_type == "first":
+    #     current_page_num = 1
+    # elif action_type == "last":
+    #     current_page_num = total_pages
+    if action_type == "next":
+        if current_page_num < total_pages:
+            current_page_num += 1
+        else:
+            messagebox.showinfo("Thông báo", "Bạn đang ở trang cuối cùng!")  # Thông báo khi cố bấm tiếp
+    elif action_type == "prev":
+        if current_page_num > 1:
+            current_page_num -= 1
+        else:
+            messagebox.showinfo("Thông báo", "Bạn đang ở trang đầu tiên!")  # Thông báo khi cố quay lại trước
     elif action_type == "first":
         current_page_num = 1
     elif action_type == "last":
