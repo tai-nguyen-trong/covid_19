@@ -206,26 +206,28 @@ def handle_delete_data():
 
 def sort_column(col):
     """Hàm sắp xếp cột tăng hoặc giảm dần khi nhấp vào tiêu đề"""
-    global df, ascending_order
+    global df_current, ascending_order  
 
-    # Kiểm tra trạng thái sắp xếp ban đầu (nếu chưa có, mặc định True)
+    if df_current is None or df_current.empty:
+        return  
+
+    # Kiểm tra trạng thái sắp xếp ban đầu
     if col not in ascending_order:
         ascending_order[col] = True  
 
-    # Đảo trạng thái sắp xếp mỗi lần nhấn vào cột
+    # Đảo trạng thái sắp xếp mỗi lần nhấn
     ascending_order[col] = not ascending_order[col]
 
-    # Sắp xếp dữ liệu
-    df = df.sort_values(by=col, ascending=ascending_order[col])
+    # Sắp xếp dữ liệu hiện tại thay vì dữ liệu gốc
+    df_current = df_current.sort_values(by=col, ascending=ascending_order[col])
 
     # Cập nhật tiêu đề **chỉ trên cột được nhấn**
     up_icon = "▲" if ascending_order[col] else "▲"
     down_icon = "▼" if not ascending_order[col] else "▼"
     tree.heading(col, text=f"{up_icon} {col} {down_icon}", command=lambda _col=col: sort_column(_col))
 
-    # Cập nhật lại bảng hiển thị
-    crud.update_table_display(tree, page_label, df, current_page, items_per_page)
-
+    # Cập nhật lại bảng hiển thị theo dữ liệu đã lọc
+    crud.update_table_display(tree, page_label, df_current, current_page, items_per_page)
 def setup_treeview():
     headers = list(df.columns)
     tree["columns"] = headers
