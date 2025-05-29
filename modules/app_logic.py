@@ -1,15 +1,10 @@
 # modules/app_logic.py
-
 import pandas as pd
 import tkinter as tk
 from tkinter import messagebox, filedialog, ttk
 import os
-
 from modules import crud
-from modules import filters # Import module filters đã tách
-
-# app_logic sẽ không lưu trữ các DataFrame hoặc biến phân trang là global ở đây.
-# Thay vào đó, chúng sẽ được truyền vào các hàm khi cần xử lý.
+from modules import filters 
 
 def init_logic():
     """
@@ -18,70 +13,75 @@ def init_logic():
     """
     pass
 
-def open_file_action():
-    """
-    Hàm mở file CSV.
-    Trả về DataFrame gốc đã đọc hoặc None nếu có lỗi/không chọn file.
-    """
-    file_path = filedialog.askopenfilename(
-        title="Open Data File",
-        filetypes=(("CSV Files", "*.csv"), ("All Files", "*.*")),
-        initialdir=os.path.join(os.getcwd(), "dataset")
-    )
-    if file_path:
-        try:
-            temp_df = crud.read_data(file_path)
-            if temp_df is not None and not temp_df.empty:
-                messagebox.showinfo("Success", "Tải dữ liệu lên thành công!")
-                return temp_df # Trả về DataFrame đã đọc
-            else:
-                messagebox.showwarning("Warning", "File dữ liệu rỗng hoặc không đọc được.")
-                return None
-        except Exception as e:
-            messagebox.showerror("Error", f"Lỗi hệ thống: {e}")
-            return None
-    return None
+# def open_file_action():
+#     """
+#     Hàm mở file CSV.
+#     Trả về DataFrame gốc đã đọc hoặc None nếu có lỗi/không chọn file.
+#     """
+#     file_path = filedialog.askopenfilename(
+#         title="Open Data File",
+#         filetypes=(("CSV Files", "*.csv"), ("All Files", "*.*")),
+#         initialdir=os.path.join(os.getcwd(), "dataset")
+#     )
+#     if file_path:
+#         try:
+#             temp_df = crud.read_data(file_path)
+#             if temp_df is not None and not temp_df.empty:
+#                 messagebox.showinfo("Success", "Tải dữ liệu lên thành công!")
+#                 return temp_df # Trả về DataFrame đã đọc
+#             else:
+#                 messagebox.showwarning("Warning", "File dữ liệu rỗng hoặc không đọc được.")
+#                 return None
+#         except Exception as e:
+#             messagebox.showerror("Error", f"Lỗi hệ thống: {e}")
+#             return None
+#     return None
 
-def update_table_display(target_table, target_page_label, df_to_display, current_page_num, items_per_pg):
-    """
-    Hàm cập nhật một bảng dữ liệu (Treeview) trên giao diện.
-    Nhận target_table (Treeview), target_page_label (Label), DataFrame cần hiển thị,
-    số trang hiện tại và số mục trên trang làm đối số.
-    """
-    if df_to_display is None or df_to_display.empty:
-        for row in target_table.get_children():
-            target_table.delete(row)
-        target_page_label.config(text="Trang -/-")
-        return
+# def update_table_display(target_table, target_page_label, df_to_display, current_page_num, items_per_pg):
+#     """
+#     Hàm cập nhật một bảng dữ liệu (Treeview) trên giao diện.
+#     Nhận target_table (Treeview), target_page_label (Label), DataFrame cần hiển thị,
+#     số trang hiện tại và số mục trên trang làm đối số.
+#     """
+#     if df_to_display is None or df_to_display.empty:
+#         for row in target_table.get_children():
+#             target_table.delete(row)
+#         target_page_label.config(text="Trang -/-")
+#         return
 
-    page_data = crud.paginate_data(df_to_display, current_page_num, items_per_pg)
+#     page_data = crud.paginate_data(df_to_display, current_page_num, items_per_pg)
 
-    for row in target_table.get_children():
-        target_table.delete(row)
+#     for row in target_table.get_children():
+#         target_table.delete(row)
 
-    # Cập nhật các cột của Treeview nếu chưa được thiết lập (hoặc thay đổi)
-    # Đây là bước quan trọng để đảm bảo bảng có đúng cột khi dữ liệu thay đổi
-    if not target_table["columns"]: # Nếu chưa có cột nào được định nghĩa
-        target_table["columns"] = list(df_to_display.columns)
-        for col_name in df_to_display.columns:
-            target_table.heading(col_name, text=col_name)
-            target_table.column(col_name, width=120, anchor="center", stretch=tk.YES)
-        target_table.column("#0", width=0, stretch=tk.NO) # Ẩn cột ID mặc định
+#     # Cập nhật các cột của Treeview nếu chưa được thiết lập (hoặc thay đổi)
+#     # Đây là bước quan trọng để đảm bảo bảng có đúng cột khi dữ liệu thay đổi
+#     if not target_table["columns"]: # Nếu chưa có cột nào được định nghĩa
+#         target_table["columns"] = list(df_to_display.columns)
+#         for col_name in df_to_display.columns:
+#             target_table.heading(col_name, text=col_name)
+#             # target_table.heading(col_name, text=col_name + " ▲↓", command=lambda _col=col_name: sort_column(_col))
+#             target_table.column(col_name, width=120, anchor="center", stretch=tk.YES)
+#         target_table.column("#0", width=0, stretch=tk.NO) # Ẩn cột ID mặc định
     
-    # Kiểm tra xem số lượng cột có khớp không, nếu không thì reset cột
-    elif list(target_table["columns"]) != list(df_to_display.columns):
-        target_table["columns"] = list(df_to_display.columns)
-        for col_name in df_to_display.columns:
-            target_table.heading(col_name, text=col_name)
-            target_table.column(col_name, width=120, anchor="center", stretch=tk.YES)
-        target_table.column("#0", width=0, stretch=tk.NO)
+#     # Kiểm tra xem số lượng cột có khớp không, nếu không thì reset cột
+#     elif list(target_table["columns"]) != list(df_to_display.columns):
+#         target_table["columns"] = list(df_to_display.columns)
+#         for col_name in df_to_display.columns:
+#             target_table.heading(col_name, text=col_name)
+#             # target_table.heading(col_name, text=col_name + " ▲↓", command=lambda _col=col_name: sort_column(_col))
+#             target_table.column(col_name, width=120, anchor="center", stretch=tk.YES)
+#         target_table.column("#0", width=0, stretch=tk.NO)
 
 
-    for _, row in page_data.iterrows():
-        target_table.insert("", "end", values=list(row))
+#     for _, row in page_data.iterrows():
+#         target_table.insert("", "end", values=list(row))
 
-    total_pages = crud.get_total_pages(df_to_display, items_per_pg)
-    target_page_label.config(text=f"Trang {current_page_num}/{total_pages}")
+#     # Thêm dòng này để cập nhật scrollbar
+#     target_table.update_idletasks()
+
+#     total_pages = crud.get_total_pages(df_to_display, items_per_pg)
+#     target_page_label.config(text=f"Trang {current_page_num}/{total_pages}")
 
 def handle_page_navigation(df_current, current_page_num, items_per_pg, action_type):
     """
@@ -224,7 +224,7 @@ def display_filtered_data_window(root_window, filtered_df):
         new_page = handle_page_navigation(filtered_df, current_filtered_page[0], items_per_page_filtered, action_type)
         if new_page != current_filtered_page[0]:
             current_filtered_page[0] = new_page
-            update_table_display(result_table, result_page_label, filtered_df, current_filtered_page[0], items_per_page_filtered)
+            crud.update_table_display(result_table, result_page_label, filtered_df, current_filtered_page[0], items_per_page_filtered)
 
     # Các nút cho phân trang của cửa sổ mới
     button_frame = tk.Frame(result_window)
@@ -237,4 +237,4 @@ def display_filtered_data_window(root_window, filtered_df):
 
 
     # Ban đầu hiển thị dữ liệu đã lọc
-    update_table_display(result_table, result_page_label, filtered_df, current_filtered_page[0], items_per_page_filtered)
+    crud.update_table_display(result_table, result_page_label, filtered_df, current_filtered_page[0], items_per_page_filtered)
