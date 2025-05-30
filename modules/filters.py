@@ -141,16 +141,3 @@ def display_filtered_data_window(root_window, filtered_df):
     tk.Button(button_frame, text="Trang trước", command=lambda: navigate_filtered_page("prev")).pack(side=tk.LEFT)
     tk.Button(button_frame, text="Trang sau", command=lambda: navigate_filtered_page("next")).pack(side=tk.LEFT)
     tk.Button(button_frame, text="Trang cuối", command=lambda: navigate_filtered_page("last")).pack(side=tk.LEFT)
-def navigate_filtered_page(action_type):
-    global filtered_df, current_filtered_page, items_per_page_filtered, result_table, result_page_label  # 🔥 Đảm bảo biến toàn cục hoạt động đúng
-
-    new_page = navigation.handle_page_navigation(filtered_df, current_filtered_page[0], items_per_page_filtered, action_type)
-    
-    if new_page != current_filtered_page[0]:
-        current_filtered_page[0] = new_page
-        paginated_df = navigation.paginate_data(filtered_df, current_filtered_page[0], items_per_page_filtered)
-        updateTable.update_table_display(result_table, result_page_label, paginated_df, current_filtered_page[0], items_per_page_filtered)
-        
-        # 🔥 Cập nhật lại số trang hiển thị
-        total_pages = math.ceil(len(filtered_df) / items_per_page_filtered)
-        result_page_label.config(text=f"Trang {current_filtered_page[0]}/{total_pages}")
