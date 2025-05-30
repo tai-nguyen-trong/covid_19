@@ -1,5 +1,4 @@
-# display/menu.py=
-from curses import pair_number
+# display/menu.py
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
@@ -9,18 +8,14 @@ import matplotlib.pyplot as plt
 from tkinter import messagebox 
 from display.formInfo import show_form_window
 from modules import crud
-<<<<<<< HEAD
-from modules.crud import read_data
-=======
 from modules import sort
 from modules import updateTable
 from modules import navigation
 from modules.filters import show_filter_window
 from modules.navigation import get_total_pages, handle_page_navigation
-# from modules.sort import sort_column
 from modules.updateTable import update_table_display
->>>>>>> TrongTai
 from modules.chart import open_chart_window
+
 
 # Biến toàn cục cho ứng dụng (QUẢN LÝ DỮ LIỆU TẠI ĐÂY)
 df = None # df hiện tại đang hiển thị trên bảng chính (có thể là original hoặc đã lọc trước đó)
@@ -61,7 +56,6 @@ def handle_load_csv():
             for item in tree.get_children():
                 tree.delete(item)
 
-<<<<<<< HEAD
             # # Cấu hình cột của Treeview
             # headers = list(df.columns)
             # tree["columns"] = headers
@@ -72,9 +66,6 @@ def handle_load_csv():
             #     tree.column(col, width=120, anchor="center", stretch=tk.YES)
             # tree.column("#0", width=0, stretch=tk.NO)  # Ẩn cột ID mặc định
             # ======================= TREEVIEW COLUMNS (Đặt đúng vị trí) =======================
-=======
-            # Cấu hình lại cột nếu cần
->>>>>>> TrongTai
             headers = list(df.columns)
             tree["columns"] = headers
             tree["show"] = "headings"
@@ -118,25 +109,13 @@ def handle_add_data():
     def on_submit(new_data):
         global df, df_original, df_current, current_page  
 
-<<<<<<< HEAD
         # #  Đọc lại dữ liệu từ file để đảm bảo không bị mất dữ liệu cũ
         # df = read_data("dataset/country_wise_latest.csv")
         # if df is None:
         #     df = pd.DataFrame()  # Nếu file chưa tồn tại
 
-=======
-        try:
-            df_existing = pd.read_csv("dataset/country_wise_latest.csv", dtype=str)  # Đọc dữ liệu dưới dạng chuỗi để tránh lỗi NaN
-        except FileNotFoundError:
-            df_existing = pd.DataFrame()
-
-        # Chuyển các trường rỗng thành NaN ngay lúc thêm dữ liệu
-        new_data = {key: (val if val.strip() != "" else np.nan) for key, val in new_data.items()}
-
-        # ➕ Thêm dòng mới vào dữ liệu hiện tại
->>>>>>> TrongTai
         new_row = pd.DataFrame([new_data])
-        df = pd.concat([df_existing, new_row], ignore_index=True)  
+        df = pd.concat([df, new_row], ignore_index=True)  
         df_original = df.copy()
         df_current = df.copy()  
 
@@ -288,39 +267,6 @@ def handle_delete_data():
 #     crud.delete_data(selected, tree, page_label, current_page, items_per_page)
 
 
-def handle_sort_column(col):
-    """Hàm sắp xếp cột tăng hoặc giảm dần khi nhấp vào tiêu đề"""
-    global df_current, ascending_order, current_page  
-
-    if df_current is None or df_current.empty:
-        return  
-
-    # Kiểm tra trạng thái sắp xếp ban đầu
-    if col not in ascending_order:
-        ascending_order[col] = True  
-
-    # Đảo trạng thái sắp xếp mỗi lần nhấn
-    ascending_order[col] = not ascending_order[col]
-
-    # Sắp xếp dữ liệu hiện tại thay vì dữ liệu gốc
-    df_current = df_current.sort_values(by=col, ascending=ascending_order[col])
-
-    # 🛠 Cập nhật tiêu đề **đúng biểu tượng**
-    up_icon = "▲"
-    down_icon = "▼"
-    icon = up_icon if ascending_order[col] else down_icon
-    tree.heading(col, text=f"{col} {icon}", command=lambda _col=col: handle_sort_column(_col))
-
-    # 🔥 Tính lại số trang sau khi sắp xếp
-    total_pages = get_total_pages(df_current, items_per_page)
-    current_page = min(current_page, total_pages)
-
-    # Cập nhật lại bảng hiển thị theo dữ liệu đã lọc
-    update_table_display(tree, page_label, df_current, current_page, items_per_page)
-    page_label.config(text=f"Trang {current_page}/{total_pages}")
-# def handle_sort_column(col):
-#     sort.sort_column(col, tree, page_label, current_page, items_per_page, get_total_pages, update_table_display)
-
 
 def handle_setup_treeview():
     global df_current, ascending_order  
@@ -338,14 +284,6 @@ def handle_setup_treeview():
         tree.heading(col, text=f"{col} ▼", command=lambda _col=col: sort.sort_column(_col))
         tree.column(col, width=120, anchor="center", stretch=tk.YES)
 
-<<<<<<< HEAD
-=======
-# def handle_setup_treeview():
-#     """Gọi chức năng setup Treeview từ module `crud.py`"""
-#     sort.setup_treeview(tree)
-
-
->>>>>>> TrongTai
 def handle_search_data(keyword):
     global df_original, df_current, current_page  
 
@@ -365,12 +303,23 @@ def handle_search_data(keyword):
         df_current = df_original.copy()
         current_page = 1  
 
-<<<<<<< HEAD
 def reset_search():
     global df
     df = df_original.copy()
     crud.update_table_display(tree, page_label, df, 1, items_per_page)
 #========================= EXPORT DATA =========================
+# hàm sort
+
+def handle_sort_column(col):
+    """Hàm sắp xếp cột sử dụng module sort"""
+    global df_current, current_page
+    
+    if df_current is None or df_current.empty:
+        return
+    
+    # Gọi hàm sort từ module và nhận về df đã sort và current_page mới
+    df_current, current_page = sort.sort_column(col, tree, page_label, df_current, current_page, items_per_page)
+
 # tiếp tục hàm export_data
 def export_data():
     global df
@@ -388,26 +337,26 @@ def export_data():
             messagebox.showinfo("Thành công", f"Dữ liệu đã được xuất thành công vào {file_path}")
         except Exception as e:
             messagebox.showerror("Lỗi", f"Lỗi khi xuất dữ liệu: {str(e)}")
-=======
-        total_pages = get_total_pages(df_current, items_per_page)
+# hàm phân trang
 
-        update_table_display(tree, page_label, df_current, current_page, items_per_page)
-        page_label.config(text=f"Trang {current_page}/{total_pages}")
-        return
+def handle_navigate_page(action_type):
+    """Sử dụng module navigation để xử lý điều hướng trang"""
+    global current_page, df_current
 
-    # 🛠 Cập nhật dữ liệu tìm kiếm
-    df_current = df_filtered  
-    current_page = 1  
-    total_pages_filtered = get_total_pages(df_current, items_per_page)
+    if df_current is None or df_current.empty: 
+        return  # Không làm gì nếu chưa có dữ liệu
 
-    # Hiển thị kết quả tìm kiếm với số trang mới
-    update_table_display(tree, page_label, df_current, current_page, items_per_page)
-    page_label.config(text=f"Trang {current_page}/{total_pages_filtered}")
-# def handle_search_data(keyword):
-#     """Gọi chức năng tìm kiếm từ module `crud.py`"""
-#     search.search_data(keyword, tree, page_label, current_page, items_per_page, get_total_pages, update_table_display)
+    # Gọi điều hướng từ module navigation
+    new_page = navigation.handle_page_navigation(df_current, current_page, items_per_page, action_type)  
+    
+    if new_page != current_page:  # Chỉ cập nhật nếu trang thay đổi
+        current_page = new_page
+        updateTable.update_table_display(tree, page_label, df_current, current_page, items_per_page)
+        
+        total_pages_filtered = navigation.get_total_pages(df_current, items_per_page)
+        page_label.config(text=f"Trang {current_page}/{total_pages_filtered}") 
 
->>>>>>> TrongTai
+
 
 def handle_reset_search():
     global df, df_current, current_page  
@@ -438,58 +387,9 @@ def handle_reset_search():
 #     search.reset_search(tree, page_label, current_page, items_per_page, get_total_pages, update_table_display, search_entry)
 
 
-<<<<<<< HEAD
-    start_index = (pair_number - 1) * items_per_page
+    start_index = (current_page - 1) * items_per_page
     end_index = start_index + items_per_page
     return df.iloc[start_index:end_index]
-=======
-# Nút lọc dữ liệu
-def handle_filter_click():
-    global df_original
-    if df_original is None or df_original.empty:
-        messagebox.showwarning("Warning", "Chưa tải dữ liệu để lọc!")
-        return
-
-    # Truyền root và df_original vào hàm lọc để app_logic có thể dùng
-    show_filter_window(root, df_original)
-
-# ham xuất file thực hiện việc xuất file
-def export_data():
-    global df
-    if df is None or df.empty:
-        messagebox.showwarning("Không có dữ liệu", "Không có dữ liệu để xuất.")
-        return
-    # Mở hộp thoại lưu tệp
-    file_path = filedialog.asksaveasfilename(
-        defaultextension=".csv",
-        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-    )
-    if file_path:
-        try:
-            df.to_csv(file_path, index=False)
-            messagebox.showinfo("Thành công", f"Dữ liệu đã được xuất thành công vào {file_path}")
-        except Exception as e:
-            messagebox.showerror("Lỗi", f"Không thể xuất dữ liệu: {str(e)}")
-# sử dụng modile để điều hướng trang 
-
-def handle_navigate_page(action_type):
-    """Sử dụng module navigation để xử lý điều hướng trang"""
-    global current_page, df_current
-
-    if df_current is None or df_current.empty: 
-        return  # Không làm gì nếu chưa có dữ liệu
-
-    # Gọi điều hướng từ module navigation
-    new_page = navigation.handle_page_navigation(df_current, current_page, items_per_page, action_type)  
-    
-    if new_page != current_page:  # Chỉ cập nhật nếu trang thay đổi
-        current_page = new_page
-        updateTable.update_table_display(tree, page_label, df_current, current_page, items_per_page)
-        
-        total_pages_filtered = navigation.get_total_pages(df_current, items_per_page)
-        page_label.config(text=f"Trang {current_page}/{total_pages_filtered}") 
-
->>>>>>> TrongTai
 
 # ======================= GUI SETUP =======================
 # Khởi tạo cửa sổ chính
@@ -565,17 +465,9 @@ button_frame.pack(pady=10)
 btn_create = tk.Button(button_frame, text="Create", bg="orange", width=10, command=handle_add_data)
 btn_update = tk.Button(button_frame, text="Update", bg="lightblue", width=10, command=handle_update_data)
 btn_delete = tk.Button(button_frame, text="Delete", bg="red", fg="white", width=10, command=handle_delete_data)
-<<<<<<< HEAD
+btn_reset = tk.Button(button_frame, text="Reset", bg="gray", fg="white", width=10, command=handle_reset_search)
 btn_chart = tk.Button(button_frame, text="Charts", bg="purple", fg="white", width=10, command= lambda :open_chart_window(root, df))
 btn_export = tk.Button(button_frame, text="Export", bg="green", fg="white", width=10, command=export_data)
-=======
-btn_reset = tk.Button(button_frame, text="Reset", bg="lightgray", width=10, command=handle_reset_search)
-btn_chart = tk.Button(button_frame, text="Charts", bg="purple", fg="white", width=10, command=lambda :open_chart_window(root, df))
-btn_export = tk.Button(button_frame, text="Export", bg="green", fg="white", width=10, command= export_data)
-btn_filter = tk.Button(button_frame, text="Filter", bg="yellow", width=10, command=handle_filter_click)
-
-
->>>>>>> TrongTai
 
 # btn_create.grid(row=0, column=0, padx=5)
 # btn_update.grid(row=0, column=1, padx=5)
@@ -598,7 +490,7 @@ btn_filter = tk.Button(button_frame, text="Filter", bg="yellow", width=10, comma
 
 
 # Ẩn tất cả các nút khi chương trình khởi động
-function_buttons = [btn_create, btn_update, btn_delete, btn_reset, btn_chart, btn_export, btn_filter]
+function_buttons = [btn_create, btn_update, btn_delete, btn_reset, btn_chart, btn_export]
 function_buttons2 = [btn_first, btn_prev, btn_next, btn_last, page_label]
 for btn in function_buttons:
     btn.grid_remove()
