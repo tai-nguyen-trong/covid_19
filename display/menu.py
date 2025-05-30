@@ -1,4 +1,5 @@
 # display/menu.py
+from modules  import search
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
@@ -284,29 +285,22 @@ def handle_setup_treeview():
         tree.heading(col, text=f"{col} ▼", command=lambda _col=col: sort.sort_column(_col))
         tree.column(col, width=120, anchor="center", stretch=tk.YES)
 
+# ======================= SEARCH FUNCTIONALITY =======================
 def handle_search_data(keyword):
-    global df_original, df_current, current_page  
+    """Wrapper function cho search"""
+    global df_current, current_page
+    df_current, current_page = search.handle_search_data(
+        keyword, df_original, df_current, current_page, items_per_page, tree, page_label
+    )
 
-    if not keyword or df_original is None or df_original.empty:
-        messagebox.showerror("Lỗi", "Dữ liệu gốc không hợp lệ hoặc từ khóa tìm kiếm trống!")
-        return
-
-    keyword = keyword.lower()
-
-    # 🔍 Lọc dữ liệu
-    df_filtered = df_original[df_original.astype(str).apply(lambda x: x.str.contains(keyword, case=False, na=False)).any(axis=1)]
-
-    if df_filtered.empty:
-        messagebox.showinfo("Thông báo", "Không tìm thấy kết quả phù hợp!")
-
-        # 🔥 Khôi phục dữ liệu gốc để tránh lỗi hiển thị
-        df_current = df_original.copy()
-        current_page = 1  
-
-def reset_search():
-    global df
-    df = df_original.copy()
-    crud.update_table_display(tree, page_label, df, 1, items_per_page)
+def handle_reset_search():
+    """Wrapper function cho reset search"""
+    global df, df_current, current_page
+    df_current, current_page = search.handle_reset_search(
+        df_original, current_page, items_per_page, tree, page_label, search_entry
+    )
+    # Cập nhật df để đồng bộ
+    df = df_current.copy()
 #========================= EXPORT DATA =========================
 # hàm sort
 
@@ -356,40 +350,6 @@ def handle_navigate_page(action_type):
         total_pages_filtered = navigation.get_total_pages(df_current, items_per_page)
         page_label.config(text=f"Trang {current_page}/{total_pages_filtered}") 
 
-
-
-def handle_reset_search():
-    global df, df_current, current_page  
-
-    
-    if df_original is None or df_original.empty:
-        messagebox.showerror("Lỗi", "Không có dữ liệu gốc để reset!")
-        return
-
-    #  Khôi phục dữ liệu về trạng thái ban đầu
-    df = df_original.copy()
-    df_current = df_original.copy()
-    current_page = 1  
-
-    # 🛠 Xóa nội dung ô tìm kiếm để đảm bảo reset hoàn toàn
-    search_entry.delete(0, tk.END)  
-
-    # 📊 Tính lại số trang sau khi reset
-    total_pages = navigation.get_total_pages(df_current, items_per_page)
-
-    # 🔄 Cập nhật lại bảng hiển thị
-    updateTable.update_table_display(tree, page_label, df_current, current_page, items_per_page)
-    page_label.config(text=f"Trang {current_page}/{total_pages}")
-
-    messagebox.showinfo("Thông báo", "Đã reset tìm kiếm về dữ liệu gốc!")
-# def handle_reset_search():
-#     """Gọi chức năng reset tìm kiếm từ module `crud.py`"""
-#     search.reset_search(tree, page_label, current_page, items_per_page, get_total_pages, update_table_display, search_entry)
-
-
-    start_index = (current_page - 1) * items_per_page
-    end_index = start_index + items_per_page
-    return df.iloc[start_index:end_index]
 
 # ======================= GUI SETUP =======================
 # Khởi tạo cửa sổ chính
