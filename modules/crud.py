@@ -6,12 +6,13 @@ from modules.navigation import get_total_pages
 from modules.updateTable import update_table_display
 
 # Biến toàn cục để quản lý dữ liệu
-df = None
-df_original = None
-df_current = None
+# df = None
+# df_original = None
+# df_current = None
 
 def load_csv_file(tree, page_label, pagination_frame, button_frame, search_frame, function_buttons, function_buttons2, sort_column, get_total_pages, items_per_page):
     """Hàm đọc file CSV và cập nhật dữ liệu."""
+    global df_original, df_current  # 🔥 Đảm bảo `df_original` và `df_current` có thể dùng bên ngoài
 
     # Mở dialog chọn file
     file_path = filedialog.askopenfilename(
@@ -29,6 +30,8 @@ def load_csv_file(tree, page_label, pagination_frame, button_frame, search_frame
             df_original = df.copy()
             df_current = df.copy() 
             current_page = 1  # Đặt lại trang hiện tại về 1 
+
+            print("df_current crud", df_current)
 
             # Xóa dữ liệu cũ trong Treeview
             for item in tree.get_children():
@@ -67,6 +70,8 @@ def load_csv_file(tree, page_label, pagination_frame, button_frame, search_frame
 
             for i, btn in enumerate(function_buttons):
                 btn.grid(row=0, column=i, padx=5)  
+            
+            return df_current
 
         except Exception as e:
             messagebox.showerror("Lỗi", f"Lỗi khi đọc file CSV: {str(e)}")

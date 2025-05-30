@@ -11,6 +11,7 @@ from modules import crud
 from modules import sort
 from modules import updateTable
 from modules import navigation
+from modules.chart import open_chart_window
 from modules.filters import show_filter_window
 from modules.navigation import get_total_pages, handle_page_navigation
 # from modules.sort import sort_column
@@ -93,7 +94,9 @@ filtered_df = pd.DataFrame()  # DataFrame đã lọc
 #             messagebox.showerror("Lỗi", f"Lỗi khi đọc file CSV: {str(e)}")
 def handle_load_csv():
     """Gọi chức năng load CSV từ module `crud.py`"""
-    crud.load_csv_file(tree, page_label, pagination_frame, button_frame, search_frame, function_buttons, function_buttons2, handle_sort_column, get_total_pages, items_per_page)
+    global df_current
+    df_current = crud.load_csv_file(tree, page_label, pagination_frame, button_frame, search_frame, function_buttons, function_buttons2, handle_sort_column, get_total_pages, items_per_page)
+    print("df_current menu", df_current)  # 🔥 Kiểm tra dữ liệu hiện tại trước khi tải file
 
 # def handle_add_data():
 #     def on_submit(new_data):
@@ -478,6 +481,24 @@ def handle_filter_click():
     # Truyền root và df_original vào hàm lọc để app_logic có thể dùng
     show_filter_window(root, df_original)
 
+# tiếp tục hàm export_data
+def export_data():
+    global df_current
+    if df_current is None or df_current.empty:
+        messagebox.showwarning("Không có dữ liệu", "Không có dữ liệu để xuất.")
+        return
+    # Mở hộp thoại lưu tệp
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".csv",
+        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+    )
+    if file_path:
+        try:
+            df_current.to_csv(file_path, index=False)
+            messagebox.showinfo("Thành công", f"Dữ liệu đã được xuất thành công vào {file_path}")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Lỗi khi xuất dữ liệu: {str(e)}")
+
 # ======================= GUI SETUP =======================
 # Khởi tạo cửa sổ chính
 root = tk.Tk()
@@ -545,8 +566,8 @@ btn_create = tk.Button(button_frame, text="Create", bg="orange", width=10, comma
 btn_update = tk.Button(button_frame, text="Update", bg="lightblue", width=10, command=handle_update_data)
 btn_delete = tk.Button(button_frame, text="Delete", bg="red", fg="white", width=10, command=handle_delete_data)
 btn_reset = tk.Button(button_frame, text="Reset", bg="lightgray", width=10, command=handle_reset_search)
-btn_chart = tk.Button(button_frame, text="Charts", bg="purple", fg="white", width=10)
-btn_export = tk.Button(button_frame, text="Export", bg="green", fg="white", width=10)
+btn_chart = tk.Button(button_frame, text="Charts", bg="purple", fg="white", width=10, command=lambda: open_chart_window(root, df_current))
+btn_export = tk.Button(button_frame, text="Export", bg="green", fg="white", width=10, command=export_data)
 btn_filter = tk.Button(button_frame, text="Filter", bg="yellow", width=10, command=handle_filter_click)
 btn_clean = tk.Button(button_frame, text="Clean Data", bg="lightcoral", width=10, command=handle_clean_data)
 
