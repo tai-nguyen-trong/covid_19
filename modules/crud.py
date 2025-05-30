@@ -12,7 +12,7 @@ from modules.updateTable import update_table_display
 
 def load_csv_file(tree, page_label, pagination_frame, button_frame, search_frame, function_buttons, function_buttons2, sort_column, get_total_pages, items_per_page):
     """Hàm đọc file CSV và cập nhật dữ liệu."""
-    global df_original, df_current  # 🔥 Đảm bảo `df_original` và `df_current` có thể dùng bên ngoài
+    global df, df_original, df_current  # 🔥 Đảm bảo `df_original` và `df_current` có thể dùng bên ngoài
 
     # Mở dialog chọn file
     file_path = filedialog.askopenfilename(
@@ -25,13 +25,11 @@ def load_csv_file(tree, page_label, pagination_frame, button_frame, search_frame
             df = pd.read_csv(file_path)
             if df is None or df.empty:
                 messagebox.showerror("Lỗi", "Không thể đọc file CSV hoặc file không có dữ liệu!")
-                return
+                return None
 
             df_original = df.copy()
             df_current = df.copy() 
             current_page = 1  # Đặt lại trang hiện tại về 1 
-
-            print("df_current crud", df_current)
 
             # Xóa dữ liệu cũ trong Treeview
             for item in tree.get_children():
@@ -78,7 +76,8 @@ def load_csv_file(tree, page_label, pagination_frame, button_frame, search_frame
 
 def add_data(new_data, file_path="dataset/country_wise_latest.csv"):
     """Xử lý thêm dữ liệu vào DataFrame và cập nhật file CSV."""
-    global df, df_original, df_current, current_page  
+    # global df, df_original, df_current, current_page  
+    global df_original, df_current  
 
     try:
         df_existing = pd.read_csv(file_path, dtype=str)
@@ -153,6 +152,53 @@ def update_data(selected_items, tree, page_label, current_page, items_per_page, 
 
     return current_data, on_submit  # ✅ Trả về cả dữ liệu và hàm xử lý
 
+# def delete_data(selected_items, tree, page_label, current_page, items_per_page, file_path="dataset/country_wise_latest.csv"):
+#     """Xóa dữ liệu từ Treeview và cập nhật file CSV."""
+#     global df, df_original, df_current  
+
+#     if df is None or df.empty:
+#         messagebox.showerror("Lỗi", "Dữ liệu hiện tại không hợp lệ để xóa!")
+#         return
+
+#     if not selected_items:
+#         messagebox.showwarning("Chưa chọn", "Hãy chọn ít nhất một dòng để xóa.")
+#         return
+
+#     if not messagebox.askyesno("Xác nhận", "Bạn chắc chắn muốn xóa các dòng đã chọn?"):
+#         return
+
+#     # Lấy chỉ mục chính xác của dòng cần xóa
+#     indexes_to_delete = [tree.index(item) + (current_page - 1) * items_per_page for item in selected_items]
+
+
+#     # Kiểm tra chỉ mục hợp lệ
+#     valid_indexes = [i for i in indexes_to_delete if i < len(df)]
+
+#     if not valid_indexes:
+#         messagebox.showerror("Lỗi", "Không có chỉ mục hợp lệ để xóa!")
+#         return
+
+#     # Xóa các dòng hợp lệ
+#     df = df.drop(df.index[valid_indexes]).reset_index(drop=True)
+#     df_original = df.copy()
+#     df_current = df.copy()  
+
+#     # Lưu lại dữ liệu
+#     df.to_csv(file_path, index=False)
+
+#  # 🔄 Nếu tất cả dữ liệu bị xóa, đặt lại số trang
+#     if df_current.empty:
+#         current_page = 1
+#         page_label.config(text="Trang -/-")
+#     else:
+#         total_pages = get_total_pages(df_current, items_per_page)
+#         current_page = total_pages
+
+
+#     # Cập nhật giao diện
+#     update_table_display(tree, page_label, df_current, current_page, items_per_page)
+
+#     messagebox.showinfo("Thành công", "Đã xóa thành công các dòng đã chọn.")
 def delete_data(selected_items, tree, page_label, current_page, items_per_page, file_path="dataset/country_wise_latest.csv"):
     """Xóa dữ liệu từ Treeview và cập nhật file CSV."""
     global df, df_original, df_current  
@@ -168,33 +214,30 @@ def delete_data(selected_items, tree, page_label, current_page, items_per_page, 
     if not messagebox.askyesno("Xác nhận", "Bạn chắc chắn muốn xóa các dòng đã chọn?"):
         return
 
-    # Lấy chỉ mục chính xác của dòng cần xóa
-    indexes_to_delete = [tree.index(item) + (current_page - 1) * items_per_page for item in selected_items]
+    # 🔥 Kiểm tra dữ liệu đã chọn
+    print("Dữ liệu được chọn:", selected_items)
 
-    # Kiểm tra chỉ mục hợp lệ
-    valid_indexes = [i for i in indexes_to_delete if i < len(df)]
+    # Lấy giá trị từ Treeview thay vì chỉ mục
+    values_to_delete = [tree.item(item, "values")[0] for item in selected_items]  # 🔥 Giả sử cột đầu tiên là chỉ mục hoặc giá trị duy nhất
 
-    if not valid_indexes:
-        messagebox.showerror("Lỗi", "Không có chỉ mục hợp lệ để xóa!")
-        return
+    # 🔥 Xác định các dòng cần xóa
+    df = df[df.iloc[:, 0].astype(str).isin(values_to_delete) == False].reset_index(drop=True)
 
-    # Xóa các dòng hợp lệ
-    df = df.drop(df.index[valid_indexes]).reset_index(drop=True)
+    # 🔥 Cập nhật lại dữ liệu gốc để đảm bảo đúng khi reset
     df_original = df.copy()
-    df_current = df.copy()  
+    df_current = df.copy()
 
-    # 🔥 Nếu tất cả dữ liệu bị xóa, đặt lại `df_current` thành DataFrame rỗng
+    # 🔥 Ghi dữ liệu đã cập nhật vào file CSV
+    df.to_csv(file_path, index=False)
+
+    # 🔄 Nếu tất cả dữ liệu bị xóa, đặt lại số trang
     if df_current.empty:
         current_page = 1
         page_label.config(text="Trang -/-")
     else:
         total_pages = get_total_pages(df_current, items_per_page)
-        current_page = min(current_page, total_pages)
+        current_page = total_pages
 
-    # Lưu lại dữ liệu
-    df.to_csv(file_path, index=False)
-
-    # Cập nhật giao diện
     update_table_display(tree, page_label, df_current, current_page, items_per_page)
 
     messagebox.showinfo("Thành công", "Đã xóa thành công các dòng đã chọn.")
@@ -206,9 +249,6 @@ def clean_data(df):
     if df is None or df.empty:
         print("Không có dữ liệu để làm sạch.")
         return df
-
-    print("Trước khi làm sạch:")
-    print(df.info())
 
     # 🔥 Loại bỏ hàng có bất kỳ giá trị nào bị trống
     df_cleaned = df.dropna()
@@ -227,9 +267,6 @@ def clean_data(df):
 
     # 🔥 Loại bỏ hàng chứa giá trị NaN sau khi chuẩn hóa
     df_cleaned = df_cleaned.dropna()
-
-    print("Sau khi làm sạch:")
-    print(df_cleaned.info())
 
     return df_cleaned
 

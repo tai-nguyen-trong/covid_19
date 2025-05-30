@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tkinter import messagebox 
 from display.formInfo import show_form_window
-from modules import crud
+from modules import crud, search
 from modules import sort
 from modules import updateTable
 from modules import navigation
@@ -19,7 +19,7 @@ from modules.updateTable import update_table_display
 
 # Biến toàn cục cho ứng dụng (QUẢN LÝ DỮ LIỆU TẠI ĐÂY)
 df = None # df hiện tại đang hiển thị trên bảng chính (có thể là original hoặc đã lọc trước đó)
-df_original = None # Luôn là dữ liệu gốc sau khi tải file
+df_original = None 
 df_current = None
 current_page = 1
 items_per_page = 30
@@ -94,9 +94,13 @@ filtered_df = pd.DataFrame()  # DataFrame đã lọc
 #             messagebox.showerror("Lỗi", f"Lỗi khi đọc file CSV: {str(e)}")
 def handle_load_csv():
     """Gọi chức năng load CSV từ module `crud.py`"""
-    global df_current
+    global df_current, df_original
     df_current = crud.load_csv_file(tree, page_label, pagination_frame, button_frame, search_frame, function_buttons, function_buttons2, handle_sort_column, get_total_pages, items_per_page)
-    print("df_current menu", df_current)  # 🔥 Kiểm tra dữ liệu hiện tại trước khi tải file
+    if df_current is not None:
+        df_original = df_current.copy()  # 🔥 Gán `df_original` để đảm bảo dữ liệu gốc luôn có
+        print("df_original đã được cập nhật:")  # 🔥 Kiểm tra dữ liệu gốc
+    else:
+        print("Lỗi: df_current vẫn là None sau khi tải CSV!")
 
 # def handle_add_data():
 #     def on_submit(new_data):
@@ -395,22 +399,31 @@ def handle_search_data(keyword):
     update_table_display(tree, page_label, df_current, current_page, items_per_page)
     page_label.config(text=f"Trang {current_page}/{total_pages_filtered}")
 # def handle_search_data(keyword):
-#     """Gọi chức năng tìm kiếm từ module `crud.py`"""
-#     search.search_data(keyword, tree, page_label, current_page, items_per_page, get_total_pages, update_table_display)
+#     """Gọi chức năng tìm kiếm từ module `search.py`"""
+#     global df_current  # 🔥 Đảm bảo cập nhật `df_current` toàn cục
+
+#     df_current = search.search_data(keyword, tree, page_label, current_page, items_per_page, get_total_pages, update_table_display)
+
+#     if df_current is not None:
+#         print("df_current search menu", df_current.info())  # 🔥 Kiểm tra dữ liệu sau khi tìm kiếm
+#     else:
+#         print("Lỗi: df_current vẫn là None sau khi tìm kiếm!")
 
 
-def handle_reset_search():
-    global df, df_current, current_page  
 
-    # 🔥 Kiểm tra nếu `df_original` bị None hoặc rỗng
-    if df_original is None or df_original.empty:
-        messagebox.showerror("Lỗi", "Không có dữ liệu gốc để reset!")
+def handle_reset_search(file_path="dataset/country_wise_latest.csv"):
+    global df, df_original, df_current, current_page
+
+    # 🔥 Tải lại dữ liệu từ CSV để đảm bảo không khôi phục dữ liệu đã xóa
+    try:
+        df = pd.read_csv(file_path)
+        df_original = df.copy()
+        df_current = df.copy()
+    except FileNotFoundError:
+        messagebox.showerror("Lỗi", "File CSV không tồn tại hoặc không thể tải dữ liệu!")
         return
 
-    # 🔄 Khôi phục dữ liệu về trạng thái ban đầu
-    df = df_original.copy()
-    df_current = df_original.copy()
-    current_page = 1  
+    current_page = 1 
 
     # 🛠 Xóa nội dung ô tìm kiếm để đảm bảo reset hoàn toàn
     search_entry.delete(0, tk.END)  
@@ -428,17 +441,22 @@ def handle_reset_search():
 #     search.reset_search(tree, page_label, current_page, items_per_page, get_total_pages, update_table_display, search_entry)
 
 def handle_clean_data():
-    global df_original, df_current
+    global df_original, df_current  
+    file_path = "dataset/country_wise_latest.csv"  # 🔥 Định nghĩa đường dẫn file
 
     if df_original is None or df_original.empty:
         messagebox.showwarning("Warning", "Không có dữ liệu để làm sạch!")
         return
 
     df_cleaned = crud.clean_data(df_original.copy())  # 🔥 Áp dụng làm sạch dữ liệu
-    df_current = df_cleaned.copy()
+    df_current = df_cleaned.copy()  
+    df_original = df_cleaned.copy()  # 🔥 Cập nhật dữ liệu gốc để giữ kết quả làm sạch  
+
+    # 🔥 Ghi dữ liệu đã làm sạch vào file CSV để tránh hiển thị lại dữ liệu cũ
+    df_cleaned.to_csv(file_path, index=False)
 
     updateTable.update_table_display(tree, page_label, df_current, current_page, items_per_page)
-    messagebox.showinfo("Success", "Dữ liệu đã được làm sạch thành công!")
+    messagebox.showinfo("Success", "Dữ liệu đã được làm sạch và lưu vào file thành công!")
 
 def handle_navigate_page(action_type):
     global current_page, df_current  # Đảm bảo đang dùng dữ liệu hiện tại, không quay về df gốc
