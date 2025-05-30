@@ -15,6 +15,7 @@ from modules.filters import show_filter_window
 from modules.navigation import get_total_pages, handle_page_navigation
 # from modules.sort import sort_column
 from modules.updateTable import update_table_display
+from modules.chart import open_chart_window
 
 # Biến toàn cục cho ứng dụng (QUẢN LÝ DỮ LIỆU TẠI ĐÂY)
 df = None # df hiện tại đang hiển thị trên bảng chính (có thể là original hoặc đã lọc trước đó)
@@ -104,7 +105,7 @@ def handle_add_data():
         except FileNotFoundError:
             df_existing = pd.DataFrame()
 
-        # 🔁 Chuyển các trường rỗng thành NaN ngay lúc thêm dữ liệu
+        # Chuyển các trường rỗng thành NaN ngay lúc thêm dữ liệu
         new_data = {key: (val if val.strip() != "" else np.nan) for key, val in new_data.items()}
 
         # ➕ Thêm dòng mới vào dữ liệu hiện tại
@@ -118,7 +119,7 @@ def handle_add_data():
 
         # Cập nhật số trang sau khi thêm dữ liệu
         total_pages = get_total_pages(df_current, items_per_page)
-        current_page = max(1, total_pages)  # ✅ Đảm bảo luôn có trang hợp lệ
+        current_page = max(1, total_pages)  #  Đảm bảo luôn có trang hợp lệ
 
         # Cập nhật bảng hiển thị
         update_table_display(tree, page_label, df_current, current_page, items_per_page)
@@ -357,12 +358,12 @@ def handle_search_data(keyword):
 def handle_reset_search():
     global df, df_current, current_page  
 
-    # 🔥 Kiểm tra nếu `df_original` bị None hoặc rỗng
+    
     if df_original is None or df_original.empty:
         messagebox.showerror("Lỗi", "Không có dữ liệu gốc để reset!")
         return
 
-    # 🔄 Khôi phục dữ liệu về trạng thái ban đầu
+    #  Khôi phục dữ liệu về trạng thái ban đầu
     df = df_original.copy()
     df_current = df_original.copy()
     current_page = 1  
@@ -383,99 +384,6 @@ def handle_reset_search():
 #     search.reset_search(tree, page_label, current_page, items_per_page, get_total_pages, update_table_display, search_entry)
 
 
-#========================= CHART FUNCTIONS =========================
-def draw_chart1(df):
-    plt.figure(figsize=(8, 5))
-    top_confirmed = df.sort_values("Confirmed", ascending=False).head(10)
-    plt.bar(top_confirmed["Country/Region"], top_confirmed["Confirmed"], color='orange')
-    plt.title("Top 10 quốc gia có số ca nhiễm COVID-19 cao nhất")
-    plt.ylabel("Số ca nhiễm")
-    plt.xticks(rotation=45)
-    plt.show()
-
-def draw_chart2(df):
-    plt.figure(figsize=(8, 5))
-    top_deaths = df.sort_values("Deaths", ascending=False).head(10)
-    plt.bar(top_deaths["Country/Region"], top_deaths["Deaths"], color='red')
-    plt.title("Top 10 quốc gia có số ca tử vong cao nhất")
-    plt.ylabel("Số ca tử vong")
-    plt.xticks(rotation=45)
-    plt.show()
-
-def draw_chart3(df):
-    plt.figure(figsize=(8, 5))
-    region_deaths = df.groupby("WHO Region")["Deaths"].sum()
-    plt.pie(region_deaths, labels=region_deaths.index, autopct='%1.1f%%', startangle=140)
-    plt.title("Tỷ lệ tử vong theo khu vực WHO")
-    plt.show()
-
-def draw_chart4(df):
-    plt.figure(figsize=(8, 5))
-    top_growth = df.sort_values("1 week % increase", ascending=False).head(10)
-    plt.bar(top_growth["Country/Region"], top_growth["1 week % increase"], color='purple')
-    plt.title("Top 10 quốc gia có tỷ lệ tăng trưởng ca nhiễm trong 1 tuần cao nhất")
-    plt.ylabel("Tỷ lệ tăng trưởng (%)")
-    plt.xticks(rotation=45)
-    plt.show()
-
-def draw_chart5(df):
-    plt.figure(figsize=(8, 5))
-    top_recovered_ratio = df.sort_values("Recovered / 100 Cases", ascending=False).head(10)
-    plt.bar(top_recovered_ratio["Country/Region"], top_recovered_ratio["Recovered / 100 Cases"], color='green')
-    plt.title("Top 10 quốc gia có tỷ lệ hồi phục cao nhất")
-    plt.ylabel("Tỷ lệ hồi phục trên 100 ca (%)")
-    plt.xticks(rotation=45)
-    plt.show()
-
-# Hàm mở cửa sổ chứa các nút chọn biểu đồ
-def open_chart_window():
-    chart_window = tk.Toplevel(root)
-    chart_window.title("Chọn biểu đồ")
-    chart_window.geometry("300x300")
-    chart_window.grab_set()
-
-    # Nạp dữ liệu từ tệp CSV
-    df = pd.read_csv("dataset/country_wise_latest.csv")
-
-    # Các nút để chọn biểu đồ
-    tk.Button(chart_window, text="Ca nhiễm nhiều nhất", command=lambda: draw_chart1(df)).pack(pady=5)
-    tk.Button(chart_window, text="Tử vong cao nhất", command=lambda: draw_chart2(df)).pack(pady=5)
-    tk.Button(chart_window, text="Tỷ lệ tử vong theo WHO", command=lambda: draw_chart3(df)).pack(pady=5)
-    tk.Button(chart_window, text="Tăng trưởng ca nhiễm", command=lambda: draw_chart4(df)).pack(pady=5)
-    tk.Button(chart_window, text="Tỷ lệ hồi phục", command=lambda: draw_chart5(df)).pack(pady=5)
-
-
-def handle_navigate_page(action_type):
-    global current_page, df_current  # Đảm bảo đang dùng dữ liệu hiện tại, không quay về df gốc
-
-    if df_current is None or df_current.empty: 
-        return  # Không làm gì nếu chưa có dữ liệu
-
-    # Gọi điều hướng trên dữ liệu hiện tại
-    new_page = navigation.handle_page_navigation(df_current, current_page, items_per_page, action_type)  
-    
-    if new_page != current_page:  # Chỉ cập nhật nếu trang thay đổi
-        current_page = new_page
-        updateTable.update_table_display(tree, page_label, df_current, current_page, items_per_page)
-        
-        
-        total_pages_filtered = navigation.get_total_pages(df_current, items_per_page)
-        page_label.config(text=f"Trang {current_page}/{total_pages_filtered}") 
-
-
-# def handle_navigate_page(action_type):
-#     global current_page, df_current  # 🔥 Đảm bảo `df_current` được cập nhật đúng
-
-#     if df_current is None or df_current.empty:
-#         messagebox.showerror("Lỗi", "Không có dữ liệu để điều hướng!")
-#         return
-
-#     current_page = navigation.navigate_page(action_type, tree, page_label, items_per_page, update_table_display, get_total_pages, navigation.handle_page_navigation)
-
-#     df_current = navigation.paginate_data(df_current, current_page, items_per_page)  # 🔥 Cập nhật dữ liệu theo trang mới
-
-#     updateTable.update_table_display(tree, page_label, df_current, current_page, items_per_page)  # 🔥 Hiển thị dữ liệu mới ngay
-
 # Nút lọc dữ liệu
 def handle_filter_click():
     global df_original
@@ -485,6 +393,43 @@ def handle_filter_click():
 
     # Truyền root và df_original vào hàm lọc để app_logic có thể dùng
     show_filter_window(root, df_original)
+
+# ham xuất file thực hiện việc xuất file
+def export_data():
+    global df
+    if df is None or df.empty:
+        messagebox.showwarning("Không có dữ liệu", "Không có dữ liệu để xuất.")
+        return
+    # Mở hộp thoại lưu tệp
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".csv",
+        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+    )
+    if file_path:
+        try:
+            df.to_csv(file_path, index=False)
+            messagebox.showinfo("Thành công", f"Dữ liệu đã được xuất thành công vào {file_path}")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể xuất dữ liệu: {str(e)}")
+# sử dụng modile để điều hướng trang 
+
+def handle_navigate_page(action_type):
+    """Sử dụng module navigation để xử lý điều hướng trang"""
+    global current_page, df_current
+
+    if df_current is None or df_current.empty: 
+        return  # Không làm gì nếu chưa có dữ liệu
+
+    # Gọi điều hướng từ module navigation
+    new_page = navigation.handle_page_navigation(df_current, current_page, items_per_page, action_type)  
+    
+    if new_page != current_page:  # Chỉ cập nhật nếu trang thay đổi
+        current_page = new_page
+        updateTable.update_table_display(tree, page_label, df_current, current_page, items_per_page)
+        
+        total_pages_filtered = navigation.get_total_pages(df_current, items_per_page)
+        page_label.config(text=f"Trang {current_page}/{total_pages_filtered}") 
+
 
 # ======================= GUI SETUP =======================
 # Khởi tạo cửa sổ chính
@@ -561,9 +506,11 @@ btn_create = tk.Button(button_frame, text="Create", bg="orange", width=10, comma
 btn_update = tk.Button(button_frame, text="Update", bg="lightblue", width=10, command=handle_update_data)
 btn_delete = tk.Button(button_frame, text="Delete", bg="red", fg="white", width=10, command=handle_delete_data)
 btn_reset = tk.Button(button_frame, text="Reset", bg="lightgray", width=10, command=handle_reset_search)
-btn_chart = tk.Button(button_frame, text="Charts", bg="purple", fg="white", width=10, command=open_chart_window)
-btn_export = tk.Button(button_frame, text="Export", bg="green", fg="white", width=10)
+btn_chart = tk.Button(button_frame, text="Charts", bg="purple", fg="white", width=10, command=lambda :open_chart_window(root, df))
+btn_export = tk.Button(button_frame, text="Export", bg="green", fg="white", width=10, command= export_data)
 btn_filter = tk.Button(button_frame, text="Filter", bg="yellow", width=10, command=handle_filter_click)
+
+
 
 # btn_create.grid(row=0, column=0, padx=5)
 # btn_update.grid(row=0, column=1, padx=5)
