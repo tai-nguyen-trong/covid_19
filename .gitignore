@@ -1,2 +1,4 @@
-__pycache__/
+display/__pycache__/
+*.py[cod]
+modules/__pycache__/
 *.py[cod]
