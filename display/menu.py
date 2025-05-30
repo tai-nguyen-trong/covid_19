@@ -421,6 +421,18 @@ def handle_reset_search():
 #     """Gọi chức năng reset tìm kiếm từ module `crud.py`"""
 #     search.reset_search(tree, page_label, current_page, items_per_page, get_total_pages, update_table_display, search_entry)
 
+def handle_clean_data():
+    global df_original, df_current
+
+    if df_original is None or df_original.empty:
+        messagebox.showwarning("Warning", "Không có dữ liệu để làm sạch!")
+        return
+
+    df_cleaned = crud.clean_data(df_original.copy())  # 🔥 Áp dụng làm sạch dữ liệu
+    df_current = df_cleaned.copy()
+
+    updateTable.update_table_display(tree, page_label, df_current, current_page, items_per_page)
+    messagebox.showinfo("Success", "Dữ liệu đã được làm sạch thành công!")
 
 #========================= CHART FUNCTIONS =========================
 def draw_chart1(df):
@@ -603,6 +615,7 @@ btn_reset = tk.Button(button_frame, text="Reset", bg="lightgray", width=10, comm
 btn_chart = tk.Button(button_frame, text="Charts", bg="purple", fg="white", width=10, command=open_chart_window)
 btn_export = tk.Button(button_frame, text="Export", bg="green", fg="white", width=10)
 btn_filter = tk.Button(button_frame, text="Filter", bg="yellow", width=10, command=handle_filter_click)
+btn_clean = tk.Button(button_frame, text="Clean Data", bg="lightcoral", width=10, command=handle_clean_data)
 
 # btn_create.grid(row=0, column=0, padx=5)
 # btn_update.grid(row=0, column=1, padx=5)
@@ -625,7 +638,7 @@ btn_filter = tk.Button(button_frame, text="Filter", bg="yellow", width=10, comma
 
 
 # Ẩn tất cả các nút khi chương trình khởi động
-function_buttons = [btn_create, btn_update, btn_delete, btn_reset, btn_chart, btn_export, btn_filter]
+function_buttons = [btn_create, btn_update, btn_delete, btn_reset, btn_chart, btn_export, btn_filter, btn_clean]
 function_buttons2 = [btn_first, btn_prev, btn_next, btn_last, page_label]
 for btn in function_buttons:
     btn.grid_remove()

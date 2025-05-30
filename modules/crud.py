@@ -194,6 +194,38 @@
 
 #     messagebox.showinfo("Thành công", "Đã xóa thành công các dòng đã chọn.")
 
+import pandas as pd
 
+def clean_data(df):
+    """Làm sạch dữ liệu: Xóa hàng trống hoặc sai định dạng cho tất cả cột."""
+    if df is None or df.empty:
+        print("Không có dữ liệu để làm sạch.")
+        return df
+
+    print("Trước khi làm sạch:")
+    print(df.info())
+
+    # 🔥 Loại bỏ hàng có bất kỳ giá trị nào bị trống
+    df_cleaned = df.dropna()
+
+    # 🔥 Lấy danh sách tất cả các cột
+    all_columns = df_cleaned.columns.tolist()
+    print(f"Các cột trong dataset: {all_columns}")
+
+    # 🔥 Chuẩn hóa dữ liệu dạng chuỗi: Loại bỏ khoảng trắng dư và ký tự không hợp lệ
+    for col in df_cleaned.select_dtypes(include=['object']).columns:
+        df_cleaned[col] = df_cleaned[col].str.strip()  # Xóa khoảng trắng dư
+
+    # 🔥 Chuyển đổi kiểu dữ liệu cho tất cả cột số
+    for col in df_cleaned.select_dtypes(include=['number']).columns:
+        df_cleaned[col] = pd.to_numeric(df_cleaned[col], errors='coerce')
+
+    # 🔥 Loại bỏ hàng chứa giá trị NaN sau khi chuẩn hóa
+    df_cleaned = df_cleaned.dropna()
+
+    print("Sau khi làm sạch:")
+    print(df_cleaned.info())
+
+    return df_cleaned
 
 
