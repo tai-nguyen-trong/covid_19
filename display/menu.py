@@ -262,12 +262,51 @@ def handle_delete_data():
 #     crud.delete_data(selected, tree, page_label, current_page, items_per_page)
 
 
+# def handle_sort_column(col):
+#     """Hàm sắp xếp cột tăng hoặc giảm dần khi nhấp vào tiêu đề"""
+#     global df_current, ascending_order, current_page  
+
+#     if df_current is None or df_current.empty:
+#         return  
+
+#     # Kiểm tra trạng thái sắp xếp ban đầu
+#     if col not in ascending_order:
+#         ascending_order[col] = True  
+
+#     # Đảo trạng thái sắp xếp mỗi lần nhấn
+#     ascending_order[col] = not ascending_order[col]
+
+#     # Sắp xếp dữ liệu hiện tại thay vì dữ liệu gốc
+#     df_current = df_current.sort_values(by=col, ascending=ascending_order[col])
+
+#     # 🛠 Cập nhật tiêu đề **đúng biểu tượng**
+#     up_icon = "▲"
+#     down_icon = "▼"
+#     icon = up_icon if ascending_order[col] else down_icon
+#     tree.heading(col, text=f"{col} {icon}", command=lambda _col=col: handle_sort_column(_col))
+
+#     # 🔥 Tính lại số trang sau khi sắp xếp
+#     total_pages = get_total_pages(df_current, items_per_page)
+#     current_page = min(current_page, total_pages)
+
+#     # Cập nhật lại bảng hiển thị theo dữ liệu đã lọc
+#     updateTable.update_table_display(tree, page_label, df_current, current_page, items_per_page)
+#     page_label.config(text=f"Trang {current_page}/{total_pages}")
 def handle_sort_column(col):
-    """Hàm sắp xếp cột tăng hoặc giảm dần khi nhấp vào tiêu đề"""
+    """Hàm sắp xếp cột tăng hoặc giảm dần khi nhấp vào tiêu đề."""
     global df_current, ascending_order, current_page  
 
     if df_current is None or df_current.empty:
         return  
+
+    # 🔥 Kiểm tra kiểu dữ liệu
+    print(f"Kiểu dữ liệu của cột {col}: {df_current[col].dtype}")
+
+    # Đảm bảo cột là kiểu số để sắp xếp đúng
+    df_current[col] = pd.to_numeric(df_current[col], errors='coerce')
+
+    # Loại bỏ các giá trị NaN để tránh lỗi
+    df_current = df_current.dropna(subset=[col])
 
     # Kiểm tra trạng thái sắp xếp ban đầu
     if col not in ascending_order:
@@ -276,7 +315,7 @@ def handle_sort_column(col):
     # Đảo trạng thái sắp xếp mỗi lần nhấn
     ascending_order[col] = not ascending_order[col]
 
-    # Sắp xếp dữ liệu hiện tại thay vì dữ liệu gốc
+    # 🔥 Sắp xếp dữ liệu đúng cách
     df_current = df_current.sort_values(by=col, ascending=ascending_order[col])
 
     # 🛠 Cập nhật tiêu đề **đúng biểu tượng**
@@ -290,7 +329,7 @@ def handle_sort_column(col):
     current_page = min(current_page, total_pages)
 
     # Cập nhật lại bảng hiển thị theo dữ liệu đã lọc
-    update_table_display(tree, page_label, df_current, current_page, items_per_page)
+    updateTable.update_table_display(tree, page_label, df_current, current_page, items_per_page)
     page_label.config(text=f"Trang {current_page}/{total_pages}")
 # def handle_sort_column(col):
 #     sort.sort_column(col, tree, page_label, current_page, items_per_page, get_total_pages, update_table_display)
