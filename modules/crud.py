@@ -152,53 +152,6 @@ def update_data(selected_items, tree, page_label, current_page, items_per_page, 
 
     return current_data, on_submit  # ✅ Trả về cả dữ liệu và hàm xử lý
 
-# def delete_data(selected_items, tree, page_label, current_page, items_per_page, file_path="dataset/country_wise_latest.csv"):
-#     """Xóa dữ liệu từ Treeview và cập nhật file CSV."""
-#     global df, df_original, df_current  
-
-#     if df is None or df.empty:
-#         messagebox.showerror("Lỗi", "Dữ liệu hiện tại không hợp lệ để xóa!")
-#         return
-
-#     if not selected_items:
-#         messagebox.showwarning("Chưa chọn", "Hãy chọn ít nhất một dòng để xóa.")
-#         return
-
-#     if not messagebox.askyesno("Xác nhận", "Bạn chắc chắn muốn xóa các dòng đã chọn?"):
-#         return
-
-#     # Lấy chỉ mục chính xác của dòng cần xóa
-#     indexes_to_delete = [tree.index(item) + (current_page - 1) * items_per_page for item in selected_items]
-
-
-#     # Kiểm tra chỉ mục hợp lệ
-#     valid_indexes = [i for i in indexes_to_delete if i < len(df)]
-
-#     if not valid_indexes:
-#         messagebox.showerror("Lỗi", "Không có chỉ mục hợp lệ để xóa!")
-#         return
-
-#     # Xóa các dòng hợp lệ
-#     df = df.drop(df.index[valid_indexes]).reset_index(drop=True)
-#     df_original = df.copy()
-#     df_current = df.copy()  
-
-#     # Lưu lại dữ liệu
-#     df.to_csv(file_path, index=False)
-
-#  # 🔄 Nếu tất cả dữ liệu bị xóa, đặt lại số trang
-#     if df_current.empty:
-#         current_page = 1
-#         page_label.config(text="Trang -/-")
-#     else:
-#         total_pages = get_total_pages(df_current, items_per_page)
-#         current_page = total_pages
-
-
-#     # Cập nhật giao diện
-#     update_table_display(tree, page_label, df_current, current_page, items_per_page)
-
-#     messagebox.showinfo("Thành công", "Đã xóa thành công các dòng đã chọn.")
 def delete_data(selected_items, tree, page_label, current_page, items_per_page, file_path="dataset/country_wise_latest.csv"):
     """Xóa dữ liệu từ Treeview và cập nhật file CSV."""
     global df, df_original, df_current  
@@ -241,8 +194,6 @@ def delete_data(selected_items, tree, page_label, current_page, items_per_page, 
     update_table_display(tree, page_label, df_current, current_page, items_per_page)
 
     messagebox.showinfo("Thành công", "Đã xóa thành công các dòng đã chọn.")
-
-
 
 def clean_data(df):
     """Làm sạch dữ liệu: Xóa hàng trống hoặc sai định dạng cho tất cả cột."""
