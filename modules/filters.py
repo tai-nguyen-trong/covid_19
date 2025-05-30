@@ -1,11 +1,12 @@
 # modules/filters.py
+import math
 import pandas as pd
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
 
 from modules import updateTable
-from modules.navigation import handle_page_navigation
+from modules.navigation import handle_page_navigation, paginate_data
 
 def filter_data(df, column, min_value, max_value):
     """Lọc dữ liệu theo khoảng giá trị cho một cột cụ thể."""
@@ -56,6 +57,33 @@ def show_filter_window(root_window, df_original_data):
     max_value_entry = tk.Entry(filter_input_window)
     max_value_entry.grid(row=2, column=1, padx=10, pady=10)
 
+    # def apply_filter_and_show_results():
+    #     column = column_combobox.get()
+    #     if not column:
+    #         messagebox.showwarning("Cảnh báo", "Vui lòng chọn cột để lọc.")
+    #         return
+
+    #     try:
+    #         min_value = float(min_value_entry.get())
+    #         max_value = float(max_value_entry.get())
+
+    #         # Luôn lọc trên bản gốc để reset các bộ lọc trước đó
+    #         filtered_df = filter_data(df_original_data.copy(), column, min_value, max_value)
+
+    #         if not filtered_df.empty:
+    #             messagebox.showinfo("Success", "Dữ liệu đã được lọc và hiển thị trong cửa sổ mới!")
+    #             filter_input_window.destroy() # Đóng cửa sổ nhập điều kiện
+                
+    #             # Mở cửa sổ mới để hiển thị kết quả
+    #             display_filtered_data_window(root_window, filtered_df)
+    #         else:
+    #             messagebox.showwarning("Thông báo", "Không tìm thấy dữ liệu phù hợp với điều kiện lọc.")
+    #             # Nếu không tìm thấy, cửa sổ nhập điều kiện vẫn mở để người dùng thử lại
+                
+    #     except ValueError:
+    #         messagebox.showerror("Lỗi", "Giá trị nhập không hợp lệ! Vui lòng nhập số.")
+    #     except Exception as e:
+    #         messagebox.showerror("Lỗi", f"Có lỗi xảy ra trong quá trình lọc: {e}")
     def apply_filter_and_show_results():
         column = column_combobox.get()
         if not column:
@@ -66,19 +94,21 @@ def show_filter_window(root_window, df_original_data):
             min_value = float(min_value_entry.get())
             max_value = float(max_value_entry.get())
 
+            print(f"Đang lọc dữ liệu trên cột: {column}, min_value: {min_value}, max_value: {max_value}")  # 🔥 Kiểm tra giá trị
+
             # Luôn lọc trên bản gốc để reset các bộ lọc trước đó
             filtered_df = filter_data(df_original_data.copy(), column, min_value, max_value)
 
+            print(f"Số dòng sau khi lọc: {len(filtered_df)}")  # 🔥 Kiểm tra kết quả lọc
+
             if not filtered_df.empty:
                 messagebox.showinfo("Success", "Dữ liệu đã được lọc và hiển thị trong cửa sổ mới!")
-                filter_input_window.destroy() # Đóng cửa sổ nhập điều kiện
-                
+                filter_input_window.destroy()  # Đóng cửa sổ nhập điều kiện
+
                 # Mở cửa sổ mới để hiển thị kết quả
                 display_filtered_data_window(root_window, filtered_df)
             else:
                 messagebox.showwarning("Thông báo", "Không tìm thấy dữ liệu phù hợp với điều kiện lọc.")
-                # Nếu không tìm thấy, cửa sổ nhập điều kiện vẫn mở để người dùng thử lại
-                
         except ValueError:
             messagebox.showerror("Lỗi", "Giá trị nhập không hợp lệ! Vui lòng nhập số.")
         except Exception as e:
@@ -91,69 +121,69 @@ def show_filter_window(root_window, df_original_data):
     # root_window.wait_window(filter_input_window) # Chờ cho đến khi cửa sổ input đóng
 
 
-# tạo một cửa sổ mới (Toplevel) để hiển thị dữ liệu đã lọc
 def display_filtered_data_window(root_window, filtered_df):
-    """
-    Tạo một cửa sổ Toplevel mới để hiển thị DataFrame đã lọc.
-    """
+    """Hiển thị dữ liệu đã lọc trong cửa sổ mới với phân trang và thanh cuộn."""
     if filtered_df is None or filtered_df.empty:
         messagebox.showinfo("Thông báo", "Không có dữ liệu để hiển thị trong cửa sổ lọc.")
         return
 
+    print(f"Số dòng đã lọc: {len(filtered_df)}")  # 🔥 Kiểm tra số dòng sau khi lọc
+
     result_window = tk.Toplevel(root_window)
     result_window.title("Kết quả lọc dữ liệu")
     result_window.geometry("800x500")
-    result_window.transient(root_window) # Làm cho cửa sổ này luôn nằm trên cửa sổ chính
+    result_window.transient(root_window)
 
-    result_window.grid_columnconfigure(0, weight=1)
-    result_window.grid_rowconfigure(0, weight=1) # Cho bảng
-    result_window.grid_rowconfigure(1, weight=0) # Cho label phân trang
-    result_window.grid_rowconfigure(2, weight=0) # Cho nút phân trang
+    result_table = ttk.Treeview(result_window, show="headings")
+    result_table.pack(fill="both", expand=True)
 
-    # Frame chứa bảng và scrollbar
-    result_table_frame = tk.Frame(result_window)
-    result_table_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-    result_table_frame.grid_columnconfigure(0, weight=1)
-    result_table_frame.grid_rowconfigure(0, weight=1)
+    result_table["columns"] = list(filtered_df.columns)  # 🔥 Đảm bảo cột đúng
 
-    result_v_scrollbar = ttk.Scrollbar(result_table_frame, orient="vertical")
-    result_v_scrollbar.grid(row=0, column=1, sticky="ns")
+    for col in filtered_df.columns:
+        result_table.heading(col, text=col)
+        result_table.column(col, anchor="center", width=120)
 
-    result_h_scrollbar = ttk.Scrollbar(result_table_frame, orient="horizontal")
-    result_h_scrollbar.grid(row=1, column=0, sticky="ew")
+    result_page_label = tk.Label(result_window, text="Trang 1/-")
+    result_page_label.pack()
 
-    result_table = ttk.Treeview(result_table_frame, show="headings",
-                                yscrollcommand=result_v_scrollbar.set,
-                                xscrollcommand=result_h_scrollbar.set)
-    result_table.grid(row=0, column=0, sticky="nsew")
+    # 🔥 Tính toán phân trang
+    current_filtered_page = [1]  
+    items_per_page_filtered = 20  
+    total_pages = math.ceil(len(filtered_df) / items_per_page_filtered)  # 🔥 Tính đúng số trang
+    paginated_df = paginate_data(filtered_df, current_filtered_page[0], items_per_page_filtered)
 
-    result_v_scrollbar.config(command=result_table.yview)
-    result_h_scrollbar.config(command=result_table.xview)
+    print(f"Số trang: {total_pages}, Số dòng sau phân trang: {len(paginated_df)}")  # 🔥 Kiểm tra dữ liệu phân trang
 
-    result_page_label = tk.Label(result_window, text="Trang -/-")
-    result_page_label.grid(row=1, column=0, padx=5, pady=5)
+    result_page_label.config(text=f"Trang {current_filtered_page[0]}/{total_pages}")  # 🔥 Hiển thị số trang đúng
+    updateTable.update_table_display(result_table, result_page_label, paginated_df, current_filtered_page[0], items_per_page_filtered)
 
-    # --- Điều khiển phân trang cho cửa sổ mới ---
-    # Sử dụng một danh sách để giữ trạng thái trang hiện tại một cách mutable
-    current_filtered_page = [1] 
-    items_per_page_filtered = 20 
+    # 🔥 Thêm nút phân trang
+    button_frame = tk.Frame(result_window)
+    button_frame.pack()
 
-    def navigate_filtered_page_internal(action_type):
-        nonlocal current_filtered_page
+    def navigate_filtered_page(action_type):
         new_page = handle_page_navigation(filtered_df, current_filtered_page[0], items_per_page_filtered, action_type)
         if new_page != current_filtered_page[0]:
             current_filtered_page[0] = new_page
-            updateTable.update_table_display(result_table, result_page_label, filtered_df, current_filtered_page[0], items_per_page_filtered)
+            paginated_df = paginate_data(filtered_df, current_filtered_page[0], items_per_page_filtered)
+            updateTable.update_table_display(result_table, result_page_label, paginated_df, current_filtered_page[0], items_per_page_filtered)
 
-    # Các nút cho phân trang của cửa sổ mới
-    button_frame = tk.Frame(result_window)
-    button_frame.grid(row=2, column=0, pady=5)
+            result_page_label.config(text=f"Trang {current_filtered_page[0]}/{total_pages}")  # 🔥 Cập nhật số trang
 
-    tk.Button(button_frame, text="Trang đầu", command=lambda: navigate_filtered_page_internal("first")).pack(side=tk.LEFT, padx=5)
-    tk.Button(button_frame, text="Trang trước", command=lambda: navigate_filtered_page_internal("prev")).pack(side=tk.LEFT, padx=5)
-    tk.Button(button_frame, text="Trang sau", command=lambda: navigate_filtered_page_internal("next")).pack(side=tk.LEFT, padx=5)
-    tk.Button(button_frame, text="Trang cuối", command=lambda: navigate_filtered_page_internal("last")).pack(side=tk.LEFT, padx=5)
+    tk.Button(button_frame, text="Trang đầu", command=lambda: navigate_filtered_page("first")).pack(side=tk.LEFT)
+    tk.Button(button_frame, text="Trang trước", command=lambda: navigate_filtered_page("prev")).pack(side=tk.LEFT)
+    tk.Button(button_frame, text="Trang sau", command=lambda: navigate_filtered_page("next")).pack(side=tk.LEFT)
+    tk.Button(button_frame, text="Trang cuối", command=lambda: navigate_filtered_page("last")).pack(side=tk.LEFT)
+def navigate_filtered_page(action_type):
+    global filtered_df, current_filtered_page, items_per_page_filtered, result_table, result_page_label  # 🔥 Đảm bảo biến toàn cục hoạt động đúng
 
-
-    # Ban đầu hiển thị dữ liệu đã lọc
-    updateTable.update_table_display(result_table, result_page_label, filtered_df, current_filtered_page[0], items_per_page_filtered)
+    new_page = handle_page_navigation(filtered_df, current_filtered_page[0], items_per_page_filtered, action_type)
+    
+    if new_page != current_filtered_page[0]:
+        current_filtered_page[0] = new_page
+        paginated_df = paginate_data(filtered_df, current_filtered_page[0], items_per_page_filtered)
+        updateTable.update_table_display(result_table, result_page_label, paginated_df, current_filtered_page[0], items_per_page_filtered)
+        
+        # 🔥 Cập nhật lại số trang hiển thị
+        total_pages = math.ceil(len(filtered_df) / items_per_page_filtered)
+        result_page_label.config(text=f"Trang {current_filtered_page[0]}/{total_pages}")
