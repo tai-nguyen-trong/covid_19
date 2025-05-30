@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
 
-from modules import crud
+from modules import updateTable
 from modules.navigation import handle_page_navigation
 
 def filter_data(df, column, min_value, max_value):
@@ -143,7 +143,7 @@ def display_filtered_data_window(root_window, filtered_df):
         new_page = handle_page_navigation(filtered_df, current_filtered_page[0], items_per_page_filtered, action_type)
         if new_page != current_filtered_page[0]:
             current_filtered_page[0] = new_page
-            crud.update_table_display(result_table, result_page_label, filtered_df, current_filtered_page[0], items_per_page_filtered)
+            updateTable.update_table_display(result_table, result_page_label, filtered_df, current_filtered_page[0], items_per_page_filtered)
 
     # Các nút cho phân trang của cửa sổ mới
     button_frame = tk.Frame(result_window)
@@ -156,4 +156,4 @@ def display_filtered_data_window(root_window, filtered_df):
 
 
     # Ban đầu hiển thị dữ liệu đã lọc
-    crud.update_table_display(result_table, result_page_label, filtered_df, current_filtered_page[0], items_per_page_filtered)
+    updateTable.update_table_display(result_table, result_page_label, filtered_df, current_filtered_page[0], items_per_page_filtered)
