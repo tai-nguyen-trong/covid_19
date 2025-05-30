@@ -28,7 +28,6 @@ def show_chart(title, figsize=(12, 6)):
 
 
 def draw_chart1(df):
-   
     show_chart("Top 10 Quốc Gia - Ca Nhiễm Cao Nhất")
     data = df.nlargest(10, 'Confirmed')
     plt.bar(range(len(data)), data['Confirmed'], color='skyblue')

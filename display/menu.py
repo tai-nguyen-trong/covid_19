@@ -1,4 +1,5 @@
 # display/menu.py=
+from curses import pair_number
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
@@ -269,7 +270,7 @@ def navigate_page(action_type):
         current_page = new_page
         crud.update_table_display(tree, page_label, df, current_page, items_per_page)
 
-    start_index = (page_number - 1) * items_per_page
+    start_index = (pair_number - 1) * items_per_page
     end_index = start_index + items_per_page
     return df.iloc[start_index:end_index]
 
