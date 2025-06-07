@@ -1,199 +1,277 @@
-# import pandas as pd
-# import numpy as np
-# from tkinter import messagebox, filedialog
-# import tkinter as tk
-# from modules.navigation import get_total_pages
-# from modules.updateTable import update_table_display
+# modules/crud.py
+import pandas as pd
+import numpy as np
+from tkinter import messagebox
+from display.formInfo import show_form_window
+from .navigation import get_total_pages
+from .updateTable import update_table_display
+import os
 
-# # Biến toàn cục để quản lý dữ liệu
-# df = None
-# df_original = None
-# df_current = None
-
-# def load_csv_file(tree, page_label, pagination_frame, button_frame, search_frame, function_buttons, function_buttons2, sort_column, get_total_pages, items_per_page):
-#     """Hàm đọc file CSV và cập nhật dữ liệu."""
-
-#     # Mở dialog chọn file
-#     file_path = filedialog.askopenfilename(
-#         title="Chọn file CSV",
-#         filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-#     )
-
-#     if file_path:
-#         try:
-#             df = pd.read_csv(file_path)
-#             if df is None or df.empty:
-#                 messagebox.showerror("Lỗi", "Không thể đọc file CSV hoặc file không có dữ liệu!")
-#                 return
-
-#             df_original = df.copy()
-#             df_current = df.copy() 
-#             current_page = 1  # Đặt lại trang hiện tại về 1 
-
-#             # Xóa dữ liệu cũ trong Treeview
-#             for item in tree.get_children():
-#                 tree.delete(item)
-
-#             # Cấu hình lại cột nếu cần
-#             headers = list(df.columns)
-#             tree["columns"] = headers
-#             tree["show"] = "headings"
-
-#             for col in headers:
-#                 tree.heading(col, text=f"▲ {col} ▼", command=lambda _col=col: sort_column(_col))
-#                 tree.column(col, width=120, anchor="center", stretch=tk.YES)
-
-#             # Thêm dữ liệu mới vào Treeview
-#             for _, row in df.iterrows():
-#                 tree.insert("", "end", values=list(row))
-
-#             messagebox.showinfo("Thành công", f"Đã tải {len(df)} bản ghi từ file {file_path}")
-
-#             # Tính toán số trang mới
-#             total_pages = get_total_pages(df_current, items_per_page)  
-
-#             # Cập nhật bảng hiển thị và trạng thái trang
-#             update_table_display(tree, page_label, df_current, current_page, items_per_page)
-#             page_label.config(text=f"Trang {current_page}/{total_pages}")
-
-#             # Hiển thị phần khung chức năng
-#             pagination_frame.pack(pady=5)
-#             button_frame.pack(pady=10)
-#             search_frame.grid(row=0, column=1, padx=20, sticky="e")
-
-#             # Cập nhật trạng thái nút chức năng
-#             for j, btnChuyenHuong in enumerate(function_buttons2):
-#                 btnChuyenHuong.grid(row=0, column=j, padx=3)  
-
-#             for i, btn in enumerate(function_buttons):
-#                 btn.grid(row=0, column=i, padx=5)  
-
-#         except Exception as e:
-#             messagebox.showerror("Lỗi", f"Lỗi khi đọc file CSV: {str(e)}")
-
-# def add_data(new_data, file_path="dataset/country_wise_latest.csv"):
-#     """Xử lý thêm dữ liệu vào DataFrame và cập nhật file CSV."""
-#     global df, df_original, df_current, current_page  
-
-#     try:
-#         df_existing = pd.read_csv(file_path, dtype=str)
-#     except FileNotFoundError:
-#         df_existing = pd.DataFrame()
-
-#     # 🔁 Chuyển các trường rỗng thành NaN
-#     new_data = {key: (val if val.strip() != "" else np.nan) for key, val in new_data.items()}
-
-#     # ➕ Thêm dòng mới vào dữ liệu hiện tại
-#     new_row = pd.DataFrame([new_data])
-#     df = pd.concat([df_existing, new_row], ignore_index=True)  
-#     df_original = df.copy()
-#     df_current = df.copy()  
-
-#     # Ghi lại file CSV
-#     df.to_csv(file_path, index=False)
-
-#     return df_current  # Trả về DataFrame cập nhật để hiển thị trên giao diện
-
-# def update_data(selected_items, tree, page_label, current_page, items_per_page, file_path="dataset/country_wise_latest.csv"):
-#     """Xử lý cập nhật dữ liệu từ Treeview."""
-#     global df, df_original, df_current  
-
-#     if df is None or df_original is None:
-#         messagebox.showerror("Lỗi", "Dữ liệu không khả dụng để cập nhật!")
-#         return None, None
-
-#     df = df_original.copy()
-
-#     index = tree.index(selected_items[0]) + (current_page - 1) * items_per_page
-
-#     if index >= len(df):
-#         messagebox.showerror("Lỗi", "Chỉ mục cập nhật vượt quá kích thước dữ liệu!")
-#         return None, None
-
-#     current_data = df.iloc[index].to_dict()
-
-#     def on_submit(updated_data):
-#         global df, df_original, df_current, current_page  # 🔥 Đảm bảo biến toàn cục hoạt động đúng
-
-#         try:
-#             for key in updated_data:
-#                 if key in df.columns:
-#                     if df[key].dtype in ["int64", "float64"]:  
-#                         try:
-#                             updated_data[key] = float(updated_data.get(key, 0))  # ✅ Tránh lỗi `NoneType`
-#                         except ValueError:
-#                             messagebox.showerror("Lỗi", f"Giá trị '{updated_data[key]}' không hợp lệ cho cột {key}. Vui lòng nhập số.")
-#                             return
+class CRUDManager:
+    """Class quản lý các thao tác CRUD"""
+    
+    def __init__(self):
+        self.file_path = "dataset/country_wise_latest.csv"
+    
+    def ensure_directory_exists(self):
+        """Đảm bảo thư mục tồn tại"""
+        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
+    
+    def save_to_file(self, df):
+        """Lưu DataFrame vào file"""
+        try:
+            self.ensure_directory_exists()
+            df.to_csv(self.file_path, index=False)
+            return True
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể lưu file: {str(e)}")
+            return False
+    
+    def validate_data(self, data, df_columns, is_update=False):
+        """Validate dữ liệu"""
+        errors = []
+        
+        # Kiểm tra các trường bắt buộc
+        required_fields = ['Country/Region']
+        for field in required_fields:
+            if field in df_columns and field in data:
+                if isinstance(data[field], str) and not data[field].strip():
+                    errors.append(f"Trường '{field}' không được để trống")
+        
+        # Kiểm tra dữ liệu số
+        numeric_fields = ['Confirmed', 'Deaths', 'Recovered', 'Active']
+        for field in numeric_fields:
+            if field in df_columns and field in data:
+                if isinstance(data[field], str) and data[field].strip():
+                    try:
+                        value = float(data[field])
+                        if value < 0:
+                            errors.append(f"Trường '{field}' không được âm")
+                    except ValueError:
+                        errors.append(f"Trường '{field}' phải là số")
+        
+        return errors
+    
+    def process_data_types(self, data, df_working):
+        """Xử lý kiểu dữ liệu"""
+        processed_data = {}
+        
+        for key, val in data.items():
+            if key in df_working.columns:
+                # Xử lý giá trị trống
+                if isinstance(val, str) and val.strip() == "":
+                    processed_data[key] = np.nan
+                else:
+                    # Chuyển đổi kiểu dữ liệu phù hợp
+                    if df_working[key].dtype in ['int64', 'float64']:
+                        try:
+                            processed_data[key] = pd.to_numeric(val, errors='coerce')
+                        except:
+                            processed_data[key] = np.nan
+                    else:
+                        processed_data[key] = val
+            else:
+                processed_data[key] = val
+        
+        return processed_data
+    
+    def handle_add_data(self, root, df, df_original, df_current, current_page, items_per_page, tree, page_label):
+        """Hàm thêm dữ liệu mới"""
+        
+        # Kiểm tra xem đã có dữ liệu chưa
+        if df is None or df.empty:
+            messagebox.showwarning("Cảnh báo", "Vui lòng tải file CSV trước khi thêm dữ liệu!")
+            return df, df_original, df_current, current_page
+        
+        def on_submit(new_data):
+            nonlocal df, df_original, df_current, current_page
+            
+            try:
+                # Validate dữ liệu
+                errors = self.validate_data(new_data, df_original.columns)
+                if errors:
+                    messagebox.showerror("Lỗi validation", "\n".join(errors))
+                    return
+                
+                # Sử dụng df_original làm base
+                df_working = df_original.copy()
+                
+                # Xử lý dữ liệu mới
+                processed_data = self.process_data_types(new_data, df_working)
+                
+                # Thêm dòng mới
+                new_row = pd.DataFrame([processed_data])
+                df = pd.concat([df_working, new_row], ignore_index=True)
+                
+                # Cập nhật tất cả DataFrame
+                df_original = df.copy()
+                df_current = df.copy()
+                
+                # Lưu vào file
+                if self.save_to_file(df):
+                    # Cập nhật giao diện
+                    total_pages = get_total_pages(df_current, items_per_page)
+                    current_page = total_pages  # Chuyển đến trang cuối
                     
-#                     # 🔥 Đảm bảo giá trị số không bị chuyển thành NaN
-#                     df.at[index, key] = updated_data[key] if isinstance(updated_data[key], (int, float)) or str(updated_data.get(key, "")).strip() != "" else np.nan  
+                    update_table_display(tree, page_label, df_current, current_page, items_per_page)
+                    page_label.config(text=f"Trang {current_page}/{total_pages}")
+                    
+                    messagebox.showinfo("Thành công", "Dữ liệu đã được thêm thành công!")
+                
+            except Exception as e:
+                messagebox.showerror("Lỗi", f"Lỗi khi thêm dữ liệu: {str(e)}")
+        
+        # Hiển thị form
+        show_form_window(root, data=None, on_submit=on_submit)
+        return df, df_original, df_current, current_page
+    
+    def handle_update_data(self, root, df, df_original, df_current, current_page, items_per_page, tree, page_label):
+        """Hàm cập nhật dữ liệu"""
+        
+        # Kiểm tra có dòng nào được chọn
+        selected = tree.selection()
+        if not selected:
+            messagebox.showwarning("Chưa chọn", "Vui lòng chọn một dòng để cập nhật.")
+            return df, df_original, df_current, current_page
+        
+        # Kiểm tra dữ liệu có tồn tại
+        if df_original is None or df_original.empty:
+            messagebox.showerror("Lỗi", "Không có dữ liệu để cập nhật!")
+            return df, df_original, df_current, current_page
+        
+        # Tính chỉ mục thực tế
+        tree_index = tree.index(selected[0])
+        actual_index = tree_index + (current_page - 1) * items_per_page
+        
+        # Kiểm tra chỉ mục hợp lệ
+        if actual_index >= len(df_original):
+            messagebox.showerror("Lỗi", "Chỉ mục không hợp lệ!")
+            return df, df_original, df_current, current_page
+        
+        # Lấy dữ liệu hiện tại
+        current_data = df_original.iloc[actual_index].to_dict()
+        
+        def on_submit(updated_data):
+            nonlocal df, df_original, df_current, current_page
+            
+            try:
+                # Validate dữ liệu
+                errors = self.validate_data(updated_data, df_original.columns, is_update=True)
+                if errors:
+                    messagebox.showerror("Lỗi validation", "\n".join(errors))
+                    return
+                
+                # Tạo bản sao để làm việc
+                df_working = df_original.copy()
+                
+                # Xử lý và cập nhật dữ liệu
+                processed_data = self.process_data_types(updated_data, df_working)
+                
+                # Cập nhật từng trường
+                for key, val in processed_data.items():
+                    if key in df_working.columns:
+                        df_working.at[actual_index, key] = val
+                
+                # Cập nhật tất cả DataFrame
+                df = df_working.copy()
+                df_original = df_working.copy()
+                df_current = df_working.copy()
+                
+                # Lưu vào file
+                if self.save_to_file(df):
+                    # Cập nhật giao diện
+                    total_pages = get_total_pages(df_current, items_per_page)
+                    current_page = min(current_page, max(1, total_pages))
+                    
+                    update_table_display(tree, page_label, df_current, current_page, items_per_page)
+                    page_label.config(text=f"Trang {current_page}/{total_pages}")
+                    
+                    messagebox.showinfo("Thành công", "Dữ liệu đã được cập nhật thành công!")
+                
+            except Exception as e:
+                messagebox.showerror("Lỗi", f"Lỗi khi cập nhật dữ liệu: {str(e)}")
+        
+        # Hiển thị form với dữ liệu hiện tại
+        show_form_window(root, data=current_data, on_submit=on_submit)
+        return df, df_original, df_current, current_page
+    
+    def handle_delete_data(self, df, df_original, df_current, current_page, items_per_page, tree, page_label):
+        """Hàm xóa dữ liệu"""
+        
+        # Kiểm tra có dòng nào được chọn
+        selected = tree.selection()
+        if not selected:
+            messagebox.showwarning("Chưa chọn", "Hãy chọn ít nhất một dòng để xóa.")
+            return df, df_original, df_current, current_page
+        
+        # Xác nhận xóa
+        if not messagebox.askyesno("Xác nhận", f"Bạn chắc chắn muốn xóa {len(selected)} dòng đã chọn?"):
+            return df, df_original, df_current, current_page
+        
+        # Kiểm tra dữ liệu có tồn tại
+        if df_original is None or df_original.empty:
+            messagebox.showerror("Lỗi", "Không có dữ liệu để xóa!")
+            return df, df_original, df_current, current_page
+        
+        try:
+            # Tạo bản sao để làm việc
+            df_working = df_original.copy()
+            
+            # Tính chỉ mục thực tế trong DataFrame
+            indexes_to_delete = []
+            for item in selected:
+                tree_index = tree.index(item)
+                actual_index = tree_index + (current_page - 1) * items_per_page
+                if actual_index < len(df_working):
+                    indexes_to_delete.append(actual_index)
+            
+            if not indexes_to_delete:
+                messagebox.showwarning("Cảnh báo", "Không có dòng hợp lệ để xóa!")
+                return df, df_original, df_current, current_page
+            
+            # Xóa các dòng (sắp xếp theo thứ tự giảm dần)
+            indexes_to_delete.sort(reverse=True)
+            for idx in indexes_to_delete:
+                df_working = df_working.drop(df_working.index[idx]).reset_index(drop=True)
+            
+            # Cập nhật tất cả DataFrame
+            df = df_working.copy()
+            df_original = df_working.copy()
+            df_current = df_working.copy()
+            
+            # Lưu vào file
+            if self.save_to_file(df):
+                # Cập nhật giao diện
+                if df_current.empty:
+                    current_page = 1
+                    page_label.config(text="Trang -/-")
+                    # Xóa tất cả items trong tree
+                    for item in tree.get_children():
+                        tree.delete(item)
+                else:
+                    total_pages = get_total_pages(df_current, items_per_page)
+                    current_page = min(current_page, max(1, total_pages))
+                    
+                    update_table_display(tree, page_label, df_current, current_page, items_per_page)
+                    page_label.config(text=f"Trang {current_page}/{total_pages}")
+                
+                messagebox.showinfo("Thành công", f"Đã xóa thành công {len(indexes_to_delete)} dòng!")
+            
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Lỗi khi xóa dữ liệu: {str(e)}")
+        
+        return df, df_original, df_current, current_page
+    
+    
+# Tạo instance global để sử dụng
+crud_manager = CRUDManager()
 
-#             df_original = df.copy()
-#             df_current = df.copy()  # 🔥 Đồng bộ dữ liệu ngay sau khi cập nhật
+# Các hàm wrapper để tương thích với code cũ
+def handle_add_data(root, df, df_original, df_current, current_page, items_per_page, tree, page_label):
+    return crud_manager.handle_add_data(root, df, df_original, df_current, current_page, items_per_page, tree, page_label)
 
-#             df.to_csv(file_path, index=False)
+def handle_update_data(root, df, df_original, df_current, current_page, items_per_page, tree, page_label):
+    return crud_manager.handle_update_data(root, df, df_original, df_current, current_page, items_per_page, tree, page_label)
 
-#             if df_current is not None and not df_current.empty:
-#                 total_pages = get_total_pages(df_current, items_per_page)  
-#                 current_page = total_pages 
-#             else:
-#                 current_page = 1  # Nếu dữ liệu rỗng, đặt lại `current_page`
-
-#             update_table_display(tree, page_label, df_current, current_page, items_per_page)  # 🔥 Hiển thị dữ liệu mới ngay lập tức
-#             page_label.config(text=f"Trang {current_page}/{total_pages}")
-
-#             messagebox.showinfo("Thành công", "Dữ liệu đã được cập nhật thành công.")
-#         except Exception as e:
-#             messagebox.showerror("Lỗi", f"Lỗi cập nhật dữ liệu: {str(e)}")
-
-#     return current_data, on_submit  # ✅ Trả về cả dữ liệu và hàm xử lý
-
-# def delete_data(selected_items, tree, page_label, current_page, items_per_page, file_path="dataset/country_wise_latest.csv"):
-#     """Xóa dữ liệu từ Treeview và cập nhật file CSV."""
-#     global df, df_original, df_current  
-
-#     if df is None or df.empty:
-#         messagebox.showerror("Lỗi", "Dữ liệu hiện tại không hợp lệ để xóa!")
-#         return
-
-#     if not selected_items:
-#         messagebox.showwarning("Chưa chọn", "Hãy chọn ít nhất một dòng để xóa.")
-#         return
-
-#     if not messagebox.askyesno("Xác nhận", "Bạn chắc chắn muốn xóa các dòng đã chọn?"):
-#         return
-
-#     # Lấy chỉ mục chính xác của dòng cần xóa
-#     indexes_to_delete = [tree.index(item) + (current_page - 1) * items_per_page for item in selected_items]
-
-#     # Kiểm tra chỉ mục hợp lệ
-#     valid_indexes = [i for i in indexes_to_delete if i < len(df)]
-
-#     if not valid_indexes:
-#         messagebox.showerror("Lỗi", "Không có chỉ mục hợp lệ để xóa!")
-#         return
-
-#     # Xóa các dòng hợp lệ
-#     df = df.drop(df.index[valid_indexes]).reset_index(drop=True)
-#     df_original = df.copy()
-#     df_current = df.copy()  
-
-#     # 🔥 Nếu tất cả dữ liệu bị xóa, đặt lại `df_current` thành DataFrame rỗng
-#     if df_current.empty:
-#         current_page = 1
-#         page_label.config(text="Trang -/-")
-#     else:
-#         total_pages = get_total_pages(df_current, items_per_page)
-#         current_page = min(current_page, total_pages)
-
-#     # Lưu lại dữ liệu
-#     df.to_csv(file_path, index=False)
-
-#     # Cập nhật giao diện
-#     update_table_display(tree, page_label, df_current, current_page, items_per_page)
-
-#     messagebox.showinfo("Thành công", "Đã xóa thành công các dòng đã chọn.")
-
-
-
-
+def handle_delete_data(df, df_original, df_current, current_page, items_per_page, tree, page_label):
+    return crud_manager.handle_delete_data(df, df_original, df_current, current_page, items_per_page, tree, page_label)
