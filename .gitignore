@@ -1,4 +1,4 @@
-display/__pycache__/
+./__pycache__/
 *.pyc
 modules/__pycache__/
 *.pyc
