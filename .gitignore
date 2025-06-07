@@ -1,4 +1,6 @@
-/display/__pycache__/
-*.py[cod]
-/modules/__pycache__/
-*.py[cod]
+display/__pycache__/
+*.pyc
+modules/__pycache__/
+*.pyc
+__pycache__/
+*.pyc
